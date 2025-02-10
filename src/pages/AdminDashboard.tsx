@@ -30,14 +30,17 @@ const AdminDashboard: React.FC = () => {
   const [isCoinsEnabled, setIsCoinsEnabled] = useState(false);
 
   useEffect(() => {
-    if (!currentUser?.is_admin) {
+    const isDev = import.meta.env.MODE === 'development'; // Check if in dev mode
+    
+    if (!currentUser?.is_admin && !isDev) {
       navigate('/');
       return;
     }
-
+  
     loadStats();
     loadPendingOutcomes();
   }, [currentUser]);
+  
 
   const loadStats = async () => {
     try {

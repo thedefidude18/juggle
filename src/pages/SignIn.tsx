@@ -20,19 +20,18 @@ const SignIn: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <Logo className="w-16 h-16 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome to Bantah</h1>
-          <p className="text-gray-400">Join the community and start betting on anything</p>
+    <div className="min-h-screen bg-[#0d0f1a] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md text-center">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-4">Bantah with love!</h1>
+          <p className="text-gray-400 text-lg">
+            Challenge and win your friends in any event.
+          </p>
         </div>
 
         <button
           onClick={handleSignIn}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium bg-[#CCFF00] text-black hover:bg-[#b3ff00] transition-colors"
+          className="w-full max-w-xs mx-auto flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold bg-[#CCFF00] text-black hover:bg-[#b3ff00] transition-colors transform hover:scale-105"
         >
           Sign In
         </button>
