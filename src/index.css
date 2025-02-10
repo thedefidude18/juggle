@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Safe area insets for modern mobile browsers */
+.safe-top {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  min-height: calc(72px + env(safe-area-inset-bottom));
+}
+
+@supports not (padding: max(0px)) {
+  .safe-top {
+    padding-top: 1rem;
+  }
+  
+  .safe-bottom {
+    padding-bottom: 1rem;
+    min-height: 72px;
+  }
+}
+
+/* Dark mode styles */
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+/* Base styles */
+@layer base {
+  body {
+    @apply bg-light-bg text-light-text transition-colors duration-200;
+  }
+
+  .dark body {
+    @apply bg-dark-bg text-dark-text;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
