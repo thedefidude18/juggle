@@ -41,10 +41,10 @@ const Header: React.FC<HeaderProps> = ({
   }, 0);
 
   return (
-    <header className="bg-[#7C3AED] text-white p-4 sticky top-0 z-10 safe-top">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {showMenu ? (
+    <header className="bg-[#7C3AED] text-white p-2 sticky top-0 z-10 safe-top"> {/* Reduced padding */}
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2"> {/* Reduced gap */}
+      {showMenu ? (
             <>
               <button
                 onClick={onMenuClick}

@@ -66,13 +66,13 @@ const MobileFooterNav: React.FC = () => {
         >
           <div className="relative">
             {item.badge && (
-              <span className="absolute -top-1 -right-2 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+              <span className="absolute -top-1 -right-2 bg-[#CCFF00] text-black text-xs font-medium rounded-full min-w-[15px] h-[15px] flex items-center justify-center">
                 {item.badge}
               </span>
             )}
             <div
               className={`p-1 ${
-                currentPath === item.path ? 'text-[#CCFF00]' : 'text-white/80'
+                currentPath === item.path ? 'text-[#CCFF00]' : 'text-white/100'
               }`}
             >
               {item.icon}
