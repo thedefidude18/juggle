@@ -30,14 +30,14 @@ const MobileFooterNav: React.FC = () => {
     {
       id: 'games',
       path: '/games',
-      icon: <img src="https://your-image-link.svg" alt="Events Icon" className="w-6 h-6" />,
+      icon: <img src="/src/bet-active.png" alt="Events Icon" className="w-6 h-6" />,
       label: 'Challenge',
       badge: activeGames.toString(),
     },
     {
       id: 'create',
       path: '/create',
-      icon: <img src="/src/create.png" alt="Events Icon" className="w-6 h-6" />,
+      icon: <img src="/src/create.png" alt="Events Icon" className="w-8 h-8" />,
       label: 'Create',
       isMain: true,
     },
@@ -60,42 +60,32 @@ const MobileFooterNav: React.FC = () => {
       <div className="flex items-center justify-around px-2">
         {navItems.map((item) => (
           <button
-            key={item.id}
-            onClick={() => navigate(item.path)}
-            className={`flex flex-col items-center ${
-              item.isMain ? '-mt-6 mb-2' : 'py-3'
-            }`}
-          >
-            {item.isMain ? (
-              <div className="w-14 h-14 bg-[#CCFF00] rounded-full flex items-center justify-center shadow-lg">
-                {item.icon}
-              </div>
-            ) : (
-              <div className="relative">
-                {item.badge && (
-                  <span className="absolute -top-1 -right-2 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                    {item.badge}
-                  </span>
-                )}
-                <div
-                  className={`p-1 ${
-                    currentPath === item.path
-                      ? 'text-[#CCFF00]'
-                      : 'text-white/80'
-                  }`}
-                >
-                  {item.icon}
-                </div>
-              </div>
+          key={item.id}
+          onClick={() => navigate(item.path)}
+          className="flex flex-col items-center py-3"
+        >
+          <div className="relative">
+            {item.badge && (
+              <span className="absolute -top-1 -right-2 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                {item.badge}
+              </span>
             )}
-            <span
-              className={`text-xs mt-0.5 ${
+            <div
+              className={`p-1 ${
                 currentPath === item.path ? 'text-[#CCFF00]' : 'text-white/80'
               }`}
             >
-              {item.label}
-            </span>
-          </button>
+              {item.icon}
+            </div>
+          </div>
+          <span
+            className={`text-xs mt-0.5 ${
+              currentPath === item.path ? 'text-[#CCFF00]' : 'text-white/80'
+            }`}
+          >
+            {item.label}
+          </span>
+        </button>
         ))}
       </div>
     </div>
