@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, MessageSquare, Bell, LogIn } from 'lucide-react';
+import { Menu, LogIn } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../hooks/useWallet';
 import { useNotification } from '../hooks/useNotification';
 import { useChat } from '../hooks/useChat';
-import { Share2, ChevronRight, Wallet, Trophy, Users, TrendingUp, BarChart2 } from 'lucide-react';
 
 interface HeaderProps {
   title?: string;
@@ -26,6 +25,16 @@ const Header: React.FC<HeaderProps> = ({
   const { wallet } = useWallet();
   const { unreadCount } = useNotification();
   const { chats = [] } = useChat();
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Calculate unread messages count
   const unreadMessages = chats.reduce((count, chat) => {
@@ -41,72 +50,65 @@ const Header: React.FC<HeaderProps> = ({
   }, 0);
 
   return (
-    <header className="bg-[#7C3AED] text-white p-2 sticky top-0 z-10 safe-top"> {/* Reduced padding */}
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-2"> {/* Reduced gap */}
-      {showMenu ? (
-            <>
-              <button
-                onClick={onMenuClick}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Toggle menu"
-              >
-                <Menu className="w-6 h-6 sm:w-7 sm:h-7" />
-              </button>
-
-              <div 
-                className="flex items-center gap-3 cursor-pointer" 
-                onClick={() => navigate('/')}
-              >
-                <Logo className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-              </div>
-
-              <button 
-                onClick={() => navigate('/leaderboard')}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Leaderboard"
-              >
-              <img src="https:/src/leaderboard.png" alt="Events Icon" className="w-6 h-6" />
-              </button>
-              
-            </>
-          ) : (
-            <div className="flex items-center gap-2">
-              {icon}
-              <h1 className="text-xl font-bold">{title}</h1>
-            </div>
+    <header className="bg-[#1A1B2E] text-white p-2 sticky top-0 z-10 safe-top">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {/* Conditionally render the Menu button only if not on mobile */}
+          {showMenu && !isMobile && (
+            <button
+              onClick={onMenuClick}
+              className="p-1 hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Toggle menu"
+            >
+              <Menu className="w-6 h-6 sm:w-7 sm:h-7" />
+            </button>
           )}
+
+          {/* Always show the logo and leaderboard button */}
+          <div 
+            className="flex items-center gap-3 cursor-pointer" 
+            onClick={() => navigate('/')}
+          >
+            <Logo className="w-8 h-8 sm:w-7 sm:h-7 text-white" />
+          </div>
+
+          <button 
+            onClick={() => navigate('/leaderboard')}
+            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Leaderboard"
+          >
+            <img src="https:/src/leaderboard.png" alt="Events Icon" className="w-8 h-8" />
+          </button>
         </div>
         
         <div className="flex items-center gap-4">
           {currentUser ? (
             <>
-<button 
-  onClick={() => navigate('/messages')}
-  className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-  aria-label="Messages"
->
-  <img src="/src/message.png" alt="Messages Icon" className="w-6 h-6" />
-  {unreadMessages > 0 && (
-    <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-      {unreadMessages}
-    </span>
-  )}
-</button>
+              <button 
+                onClick={() => navigate('/messages')}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Messages"
+              >
+                <img src="/src/message.png" alt="Messages Icon" className="w-6 h-6" />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {unreadMessages}
+                  </span>
+                )}
+              </button>
 
-<button 
-  onClick={() => navigate('/notifications')}
-  className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-  aria-label="Notifications"
->
-  <img src="/src/notification.svg" alt="Notifications Icon" className="w-8 h-8" />
-  {unreadCount > 0 && (
-    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-      {unreadCount}
-    </span>
-  )}
-</button>
-
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Notifications"
+              >
+                <img src="/src/notification.svg" alt="Notifications Icon" className="w-8 h-8" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
               <button 
                 onClick={() => navigate('/wallet')}
