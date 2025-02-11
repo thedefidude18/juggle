@@ -37,8 +37,8 @@ const MobileFooterNav: React.FC = () => {
     {
       id: 'create',
       path: '/create',
-      icon: <img src="/src/create.png" alt="Events Icon" className="w-8 h-8" />,
-      label: 'Create',
+      icon: <img src="/src/create.png" alt="Events Icon" className="w-10 h-10" />,
+      label: '',
       isMain: true,
     },
     {
@@ -57,8 +57,8 @@ const MobileFooterNav: React.FC = () => {
 
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#7C3AED] safe-bottom">
-      <div className="flex items-center justify-around px-2">
-        {navItems.map((item) => (
+    <div className="flex items-center justify-around px-1 py-0.1"> {/* Minimal padding */}
+      {navItems.map((item) => (
           <button
           key={item.id}
           onClick={() => navigate(item.path)}
