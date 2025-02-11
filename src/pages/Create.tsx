@@ -28,59 +28,71 @@ const Create: React.FC = () => {
       </div>
 
       {/* Event Type Selection */}
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <button
-            onClick={() => setEventType('public')}
-            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
-              eventType === 'public'
-                ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                : 'border-white/10 hover:border-white/20'
-            }`}
-          >
-            <div className="w-12 h-12 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-              <Globe className={`w-6 h-6 ${eventType === 'public' ? 'text-[#CCFF00]' : 'text-white'}`} />
-            </div>
-            <div className="text-left">
-              <h3 className="font-medium text-white">Public Event</h3>
-              <p className="text-sm text-white/60">Anyone can join and participate</p>
-            </div>
-          </button>
+<div className="max-w-2xl mx-auto p-4">
+  <div className="flex overflow-x-auto scrollbar-hide gap-4 mb-6">
+    {/* Public Event Button */}
+    <button
+      onClick={() => setEventType('public')}
+      className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+        eventType === 'public'
+          ? 'border-[#CCFF00] bg-[#CCFF00]/10 shadow-[0_0_20px_rgba(204,255,0,0.3)]'
+          : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+      }`}
+      style={{ minWidth: '200px' }} // Reduced minimum width
+    >
+      <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
+        <Globe className={`w-5 h-5 ${
+          eventType === 'public' ? 'text-[#CCFF00]' : 'text-white'
+        }`} />
+      </div>
+      <div className="text-left">
+        <h3 className="font-medium text-white text-sm">Public Event</h3> {/* Smaller font size */}
+        <p className="text-xs text-white/60">Anyone can join</p> {/* Smaller font size */}
+      </div>
+    </button>
 
-          <button
-            onClick={() => setEventType('private')}
-            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
-              eventType === 'private'
-                ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                : 'border-white/10 hover:border-white/20'
-            }`}
-          >
-            <div className="w-12 h-12 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-              <Lock className={`w-6 h-6 ${eventType === 'private' ? 'text-[#CCFF00]' : 'text-white'}`} />
-            </div>
-            <div className="text-left">
-              <h3 className="font-medium text-white">Private Event</h3>
-              <p className="text-sm text-white/60">Invite-only participation</p>
-            </div>
-          </button>
+    {/* Private Event Button */}
+    <button
+      onClick={() => setEventType('private')}
+      className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+        eventType === 'private'
+          ? 'border-[#CCFF00] bg-[#CCFF00]/10 shadow-[0_0_20px_rgba(204,255,0,0.3)]'
+          : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+      }`}
+      style={{ minWidth: '200px' }} // Reduced minimum width
+    >
+      <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
+        <Lock className={`w-5 h-5 ${
+          eventType === 'private' ? 'text-[#CCFF00]' : 'text-white'
+        }`} />
+      </div>
+      <div className="text-left">
+        <h3 className="font-medium text-white text-sm">Private Event</h3> {/* Smaller font size */}
+        <p className="text-xs text-white/60">Invite-only</p> {/* Smaller font size */}
+      </div>
+    </button>
 
-          <button
-            onClick={() => setEventType('challenge')}
-            className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors ${
-              eventType === 'challenge'
-                ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                : 'border-white/10 hover:border-white/20'
-            }`}
-          >
-            <div className="w-12 h-12 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-              <Gamepad2 className={`w-6 h-6 ${eventType === 'challenge' ? 'text-[#CCFF00]' : 'text-white'}`} />
-            </div>
-            <div className="text-left">
-              <h3 className="font-medium text-white">Challenge</h3>
-              <p className="text-sm text-white/60">Challenge specific users</p>
-            </div>
-          </button>
-        </div>
+    {/* Challenge Button */}
+    <button
+      onClick={() => setEventType('challenge')}
+      className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+        eventType === 'challenge'
+          ? 'border-[#CCFF00] bg-[#CCFF00]/10 shadow-[0_0_20px_rgba(204,255,0,0.3)]'
+          : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+      }`}
+      style={{ minWidth: '200px' }} // Reduced minimum width
+    >
+      <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
+        <Gamepad2 className={`w-5 h-5 ${
+          eventType === 'challenge' ? 'text-[#CCFF00]' : 'text-white'
+        }`} />
+      </div>
+      <div className="text-left">
+        <h3 className="font-medium text-white text-sm">Challenge</h3> {/* Smaller font size */}
+        <p className="text-xs text-white/60">Challenge users</p> {/* Smaller font size */}
+      </div>
+    </button>
+  </div>
 
         {/* Form */}
         {eventType === 'challenge' ? (
