@@ -16,7 +16,7 @@ const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-light-bg dark:bg-dark-bg pb-[72px]">
+    <div className="min-h-screen bg-[#EDEDED] dark:bg-dark-bg pb-[72px]">
       <Header 
         title="Settings" 
         icon={<ArrowLeft className="w-6 h-6" />}
