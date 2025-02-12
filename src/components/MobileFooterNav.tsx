@@ -72,9 +72,9 @@ const MobileFooterNav: React.FC = () => {
         >
           <div className="relative">
             {item.badge && (
-              <span className="absolute -top-1 -right-2 bg-[#CCFF00] text-black text-xs font-medium rounded-full min-w-[15px] h-[15px] flex items-center justify-center">
-                {item.badge}
-              </span>
+         <span className="absolute -top-1 -right-2 bg-[#CCFF00] text-black text-[10px] font-medium rounded-md px-1 py-0.5 min-w-[15px] h-[15px] flex items-center justify-center">
+         {item.badge}
+       </span>              
             )}
             <div
               className={`p-1 ${

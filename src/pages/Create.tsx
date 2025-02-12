@@ -12,7 +12,7 @@ const Create: React.FC = () => {
   const [eventType, setEventType] = useState<EventType>('public');
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e] pb-[72px]">
+    <div className="min-h-screen bg-[#EDEDED] pb-[72px]">
       {/* Header */}
       <div className="bg-[#7C3AED] text-white">
         <div className="flex items-center justify-between p-4 safe-top">

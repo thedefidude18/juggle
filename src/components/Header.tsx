@@ -50,7 +50,7 @@ const Header: React.FC<HeaderProps> = ({
   }, 0);
 
   return (
-    <header className="bg-[#1A1B2E] text-white p-2 sticky top-0 z-10 safe-top">
+    <header className="bg-[#EDEDED] text-white p-2 sticky top-0 z-10 safe-top">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* Conditionally render the Menu button only if not on mobile */}
@@ -69,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-3 cursor-pointer" 
             onClick={() => navigate('/')}
           >
-            <Logo className="w-8 h-8 sm:w-7 sm:h-7 text-white" />
+            <Logo className="w-9 h-9 sm:w-7 sm:h-7 text-white" />
           </div>
         </div>
         
@@ -77,37 +77,35 @@ const Header: React.FC<HeaderProps> = ({
           {currentUser ? (
             <>
               <button 
-                onClick={() => navigate('/messages')}
-                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Messages"
-              >
-                <img src="/src/message.png" alt="Messages Icon" className="w-6 h-6" />
-                {unreadMessages > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                    {unreadMessages}
-                  </span>
-                )}
-              </button>
-
-              <button 
-                onClick={() => navigate('/notifications')}
-                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Notifications"
-              >
-                <img src="/src/notification.svg" alt="Notifications Icon" className="w-8 h-8" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              <button 
-                onClick={() => navigate('/wallet')}
-                className="bg-white text-[#7C3AED] px-3 py-1 rounded-full font-medium text-sm hover:bg-white/90 transition-colors"
-              >
-                ₦ {wallet?.balance?.toLocaleString() || '0.00'}
-              </button>
+        onClick={() => navigate('/messages')}
+        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+        aria-label="Messages"
+      >
+        <img src="/src/chat_icon.png" alt="Messages Icon" className="w-6 h-6" />
+        {unreadMessages > 0 && (
+          <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+            {unreadMessages}
+          </span>
+        )}
+      </button
+      ><button 
+        onClick={() => navigate('/notifications')}
+        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+        aria-label="Notifications"
+      >
+        <img src="/src/notifiblue.png" alt="Notifications Icon" className="w-5.4 h-6" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+            {unreadCount}
+          </span>
+        )}
+      </button
+      ><button 
+        onClick={() => navigate('/wallet')}
+        className="bg-white text-[#7C3AED] px-3 py-1 rounded-full font-bold text-sm hover:bg-white/90 transition-colors"
+      >
+        ₦ {wallet?.balance?.toLocaleString() || '0.00'}
+      </button>
             </>
           ) : (
             <button

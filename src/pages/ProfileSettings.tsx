@@ -112,7 +112,7 @@ const ProfileSettings: React.FC = () => {
 
   if (!initialized || !currentUser) {
     return (
-      <div className="min-h-screen bg-[#1a1b2e] flex items-center justify-center">
+      <div className="min-h-screen bg-[#EDEDED] flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );

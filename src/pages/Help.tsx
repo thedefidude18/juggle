@@ -60,14 +60,14 @@ const Help: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a1b2e] flex items-center justify-center">
+      <div className="min-h-screen bg-[#EDEDED] flex items-center justify-center">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e] pb-[72px]">
+    <div className="min-h-screen bg-[#EDEDED] pb-[72px]">
       {/* Header */}
       <header className="bg-[#7C3AED] text-white p-4 sticky top-0 z-10 safe-top">
         <div className="flex items-center gap-3">

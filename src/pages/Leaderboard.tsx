@@ -16,7 +16,7 @@ const Leaderboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a1b2e] flex items-center justify-center">
+      <div className="min-h-screen bg-[#EDEDED] flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#CCFF00]"></div>
       </div>
     );

@@ -69,7 +69,7 @@ function Home() {
   const popularEvents = events.slice(3);
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e] pb-[72px] lg:pb-0">
+    <div className="min-h-screen bg-[#EDEDED] pb-[72px] lg:pb-0">
       {/* Desktop Navigation */}
       <div className="hidden lg:block">
         <DesktopNav />

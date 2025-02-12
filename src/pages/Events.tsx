@@ -149,7 +149,7 @@ const Events: React.FC = () => {
     : mockEvents.filter(event => event.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e] pb-[72px]">
+    <div className="min-h-screen bg-[#EDEDED] pb-[72px]">
       <Header />
 
       {/* Categories */}
