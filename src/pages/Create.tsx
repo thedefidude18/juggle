@@ -13,19 +13,33 @@ const Create: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#EDEDED] pb-[72px]">
-      {/* Header */}
-      <div className="bg-[#7C3AED] text-white">
-        <div className="flex items-center justify-between p-4 safe-top">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-medium">New Event</h1>
-          <div className="w-10" /> {/* Spacer for alignment */}
-        </div>
-      </div>
+     <div className="bg-[#EDEDED] text-black flex justify-center items-center relative">
+  <button
+    onClick={() => navigate(-1)}
+    className="absolute left-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+  >
+    {/* Use an appropriate back arrow icon here */}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 19l-7-7 7-7"
+      />
+    </svg>
+  </button>
+  <div className="flex items-center justify-between w-full p-4 px-12">
+    <h1 className="text-md font-medium text-center flex-grow">Create an Event</h1>
+    <div className="w-10" /> {/* Spacer for alignment */}
+  </div>
+</div>
+
 
       {/* Event Type Selection */}
 <div className="max-w-2xl mx-auto p-4">

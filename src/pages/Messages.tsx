@@ -38,35 +38,53 @@ const Messages: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-light-bg dark:bg-dark-bg pb-[72px] lg:pb-0">
+    <div className="min-h-screen bg-[#EDEDED] dark:bg-dark-bg pb-[72px] lg:pb-0">
       {/* Header */}
-      <header className="bg-[#7C3AED] text-white p-4 sticky top-0 z-10 safe-top">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-6 h-6" />
-            <h1 className="text-xl font-bold">Messages</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setShowNewChat(true)}
-              className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-            >
-              <UserPlus className="w-5 h-5" />
-              {friendRequests > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                  {friendRequests}
-                </span>
-              )}
-            </button>
-            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <Search className="w-5 h-5" />
-            </button>
-            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <Plus className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <header className="bg-[#EDEDED] text-black p-4 sticky top-0 z-10 safe-top flex justify-center items-center relative">
+  <button
+    onClick={() => window.history.back()}
+    className="absolute left-4 p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30"
+  >
+    {/* Use an appropriate back arrow icon here */}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M15 19l-7-7 7-7"
+      />
+    </svg>
+  </button>
+  <div className="flex items-center justify-between w-full px-4">
+    <div className="flex items-center gap-2 pl-12">
+      <h1 className="text-medium font-bold text-center flex-grow">Messages</h1>
+    </div>
+    <div className="flex items-center gap-2">
+      <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+        <Search className="w-5 h-5" />
+      </button>
+      <button
+        onClick={() => setShowNewChat(true)}
+        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+      >
+        <UserPlus className="w-5 h-5" />
+        {friendRequests > 0 && (
+          <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-sm font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+            {friendRequests}
+          </span>
+        )}
+      </button>
+    </div>
+  </div>
+</header>
+
+
 
       <div className="lg:grid lg:grid-cols-[350px,1fr] h-[calc(100vh-72px)] lg:h-[calc(100vh-64px)]">
         {/* Chat List - Always visible on desktop, visible on mobile when no chat is selected */}
