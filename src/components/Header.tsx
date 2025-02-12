@@ -71,14 +71,6 @@ const Header: React.FC<HeaderProps> = ({
           >
             <Logo className="w-8 h-8 sm:w-7 sm:h-7 text-white" />
           </div>
-
-          <button 
-            onClick={() => navigate('/leaderboard')}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-            aria-label="Leaderboard"
-          >
-            <img src="https:/src/leaderboard.png" alt="Events Icon" className="w-8 h-8" />
-          </button>
         </div>
         
         <div className="flex items-center gap-4">
