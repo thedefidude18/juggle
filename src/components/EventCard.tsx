@@ -16,7 +16,6 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
   const noVotes = event.participants.filter(p => !p.prediction).length;
   const totalParticipants = event.participants.length;
 
-  // Calculate time left
   const getTimeLeft = () => {
     const now = new Date();
     const end = new Date(event.end_time);
@@ -42,7 +41,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
   };
 
   return (
-    <div className="bg-[#242538] rounded-xl overflow-hidden">
+    <div className="bg-[#242538] rounded-xl overflow-hidden shadow-lg text-white">
       <div className="relative">
         <img
           src={event.banner_url || 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&auto=format&fit=crop'}
@@ -50,19 +49,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
           className="w-full h-48 object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+        {isActive && (
+          <span className="absolute top-2 left-2 bg-[#CCFF00] text-black px-3 py-1 rounded-full text-sm flex items-center">
+            <span className="w-2 h-2 bg-black rounded-full mr-2 animate-pulse"></span>
+            LIVE
+          </span>
+        )}
         <div className="absolute bottom-4 left-4 right-4">
           <h3 className="text-white font-semibold text-lg line-clamp-2">{event.title}</h3>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="bg-[#7C3AED] text-white px-3 py-1 rounded-full text-sm">
-              Event Pool: ₦{event.pool.total_amount.toLocaleString()}
-            </span>
-            {isActive && (
-              <span className="bg-[#CCFF00] text-black px-3 py-1 rounded-full text-sm flex items-center">
-                <span className="w-2 h-2 bg-black rounded-full mr-2 animate-pulse"></span>
-                LIVE
-              </span>
-            )}
-          </div>
+          <span className="bg-[#7C3AED] text-white px-3 py-1 rounded-full text-sm mt-2 inline-block">
+            Event Pool: ₦{event.pool.total_amount.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -76,9 +73,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
             />
             <span className="text-white/60">@{event.creator.username}</span>
           </div>
-          <span className="text-white/60 text-sm">
-            {getTimeLeft()}
-          </span>
+          <span className="text-white/60 text-sm">{getTimeLeft()}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -87,9 +82,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
             className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium bg-[#CCFF00]/20 text-[#CCFF00] hover:bg-[#CCFF00]/30 transition-colors"
           >
             <span>YES</span>
-            <span className="bg-[#CCFF00]/20 px-2 py-1 rounded-full text-sm">
-              {yesVotes}
-            </span>
+            <span className="bg-[#CCFF00]/20 px-2 py-1 rounded-full text-sm">{yesVotes}</span>
           </button>
 
           <button
@@ -97,15 +90,23 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
             className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors"
           >
             <span>NO</span>
-            <span className="bg-red-500/20 px-2 py-1 rounded-full text-sm">
-              {noVotes}
-            </span>
+            <span className="bg-red-500/20 px-2 py-1 rounded-full text-sm">{noVotes}</span>
           </button>
         </div>
 
-        <div className="mt-4 text-center text-white/60 text-sm">
-          {totalParticipants} {totalParticipants === 1 ? 'participant' : 'participants'}
-        </div>
+        <button
+          onClick={() => navigate(`/event/${event.id}`)}
+          className="w-full mt-4 px-4 py-2 bg-[#7C3AED] text-white rounded-xl font-medium hover:bg-[#5B21B6] transition-colors"
+        >
+          View Event Details
+        </button>
+
+        <button
+          onClick={() => handleJoin(true)}
+          className="w-full mt-4 px-4 py-2 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+        >
+          Join
+        </button>
       </div>
     </div>
   );

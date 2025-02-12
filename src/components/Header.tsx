@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({
       </button
       ><button 
         onClick={() => navigate('/wallet')}
-        className="bg-[#CCFF00] text-[#000000] px-3 py-1 rounded-full font-medium text-sm hover:bg-white/90 transition-colors"
+        className="bg-[#CCFF00] text-[#000000] px-4 py-2 rounded-full font-medium text-sm hover:bg-white/90 transition-colors"
       >
         ₦ {wallet?.balance?.toLocaleString() || '0.00'}
       </button>

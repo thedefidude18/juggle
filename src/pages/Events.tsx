@@ -80,7 +80,7 @@ const Events: React.FC = () => {
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }},
-    { id: 'politics', icon: <img src="/src/politics.png" alt="Create Icon" className="w-8 h-13" />,  label: 'Politics', count: 15, chatRoom: {
+    { id: 'politics', icon: <img src="/src/poltiii.svg" alt="Create Icon" className="w-13 h-13" />,  label: 'Politics', count: 15, chatRoom: {
       id: 'politics-room',
       title: 'Politics Events',
       creator: {
@@ -172,7 +172,7 @@ const Events: React.FC = () => {
       {/* Categories */}
       <div className="p-2">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <div className="flex gap-3 min-w-max pb-1.5">
+        <div className="flex gap-0 min-w-max pb-1.5">
             {categories.map((category) => (
               <CategoryButton
                 key={category.id}
