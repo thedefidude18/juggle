@@ -17,7 +17,7 @@ export default {
         light: {
           bg: '#f8fafc',
           card: '#ffffff',
-          text: '#1a1b2e',
+          text: '#000000',
         },
       },
     },

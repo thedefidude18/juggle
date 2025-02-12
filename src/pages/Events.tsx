@@ -14,8 +14,8 @@ const Events: React.FC = () => {
 
   // Categories with icons and counts
   const categories = [
-    { id: 'create', icon: <Plus />, label: 'Create Group', primary: true },
-    { id: 'sports', icon: '⚽️', label: 'Sports', count: 28, chatRoom: {
+    { id: 'create', icon: <img src="/src/createvent.svg" alt="Create Icon" className="w-13 h-13" />, label: 'Create', primary: true },
+    { id: 'sports', icon: <img src="/src/sportscon.svg" alt="Create Icon" className="w-13 h-13" />,  label: 'Sports', count: 28, chatRoom: {
       id: 'sports-room',
       title: 'Sports Events',
       creator: {
@@ -27,19 +27,24 @@ const Events: React.FC = () => {
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }},
-    { id: 'music', icon: '🎵', label: 'Music', count: 22, chatRoom: {
-      id: 'music-room',
-      title: 'Music Events',
-      creator: {
-        id: 'system',
-        name: 'Bantah Music',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=music'
-      },
+    {
+      id: 'music',
+      icon: <img src="/src/musicsvg.svg" alt="Create Icon" className="w-13 h-13" />, 
+      label: 'Music',
+      count: 22,
+      chatRoom: {
+        id: 'music-room',
+        title: 'Music Events',
+        creator: {
+          id: 'system',
+          name: 'Bantah Music',
+          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=music'
+        },
       pool: { amount: 0, participants: 0 },
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }},
-    { id: 'gaming', icon: '🎮', label: 'Gaming', count: 19, chatRoom: {
+    { id: 'gaming', icon: <img src="/src/gamingsvg.svg" alt="Create Icon" className="w-13 h-13" />,  label: 'Gaming', count: 19, chatRoom: {
       id: 'gaming-room',
       title: 'Gaming Events',
       creator: {
@@ -51,25 +56,37 @@ const Events: React.FC = () => {
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }},
-    { id: 'politics', icon: '🗳️', label: 'Politics', count: 15, chatRoom: {
-      id: 'politics-room',
-      title: 'Politics Events',
+    { id: 'crypto', icon: <img src="/src/cryptosvg.svg" alt="Create Icon" className="w-13 h-13" />,  label: 'Politics', count: 15, chatRoom: {
+      id: 'crypto',
+      title: 'Crypto Events',
       creator: {
         id: 'system',
-        name: 'Bantah Politics',
+        name: 'Bantah Crypto',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=politics'
       },
       pool: { amount: 0, participants: 0 },
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     }},
-    { id: 'entertainment', icon: '🎬', label: 'Entertainment', count: 12, chatRoom: {
+    { id: 'entertainment', icon: <img src="/src/moviesicon.svg" alt="Create Icon" className="w-13 h-13" />,  label: 'Entertainment', count: 12, chatRoom: {
       id: 'entertainment-room',
       title: 'Entertainment Events',
       creator: {
         id: 'system',
         name: 'Bantah Entertainment',
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=entertainment'
+      },
+      pool: { amount: 0, participants: 0 },
+      start_time: new Date().toISOString(),
+      end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    }},
+    { id: 'politics', icon: <img src="/src/politics.png" alt="Create Icon" className="w-8 h-13" />,  label: 'Politics', count: 15, chatRoom: {
+      id: 'politics-room',
+      title: 'Politics Events',
+      creator: {
+        id: 'system',
+        name: 'Bantah Politics',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=politics'
       },
       pool: { amount: 0, participants: 0 },
       start_time: new Date().toISOString(),
@@ -153,9 +170,9 @@ const Events: React.FC = () => {
       <Header />
 
       {/* Categories */}
-      <div className="p-4">
+      <div className="p-2">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <div className="flex gap-3 min-w-max pb-4">
+          <div className="flex gap-3 min-w-max pb-1.5">
             {categories.map((category) => (
               <CategoryButton
                 key={category.id}
