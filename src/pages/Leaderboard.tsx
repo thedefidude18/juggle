@@ -25,8 +25,7 @@ const Leaderboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#1a1b2e] pb-[72px]">
       {/* Header */}
-      <header className="bg-[#EDEDED] text-[#7C3AED] p-4 sticky top-0 z-10 safe-top flex justify-center items-center relative">
-  <button
+      <header className="bg-[#EDEDED] text-[#000000] p-4 sticky top-0 z-10 safe-top flex justify-center items-center relative">  <button
     onClick={() => window.history.back()}
     className="absolute left-4 p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30"
   >
