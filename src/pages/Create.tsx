@@ -60,8 +60,8 @@ const Create: React.FC = () => {
         }`} />
       </div>
       <div className="text-left">
-        <h3 className="font-medium text-white text-sm">Public Event</h3> {/* Smaller font size */}
-        <p className="text-xs text-white/60">Anyone can join</p> {/* Smaller font size */}
+        <h3 className="font-medium text-black text-sm">Public Event</h3> {/* Smaller font size */}
+        <p className="text-xs text-black/60">Anyone can join</p> {/* Smaller font size */}
       </div>
     </button>
 
@@ -81,8 +81,8 @@ const Create: React.FC = () => {
         }`} />
       </div>
       <div className="text-left">
-        <h3 className="font-medium text-white text-sm">Private Event</h3> {/* Smaller font size */}
-        <p className="text-xs text-white/60">Invite-only</p> {/* Smaller font size */}
+        <h3 className="font-medium text-black text-sm">Private Event</h3> {/* Smaller font size */}
+        <p className="text-xs text-black/60">Invite-only</p> {/* Smaller font size */}
       </div>
     </button>
 
@@ -102,8 +102,8 @@ const Create: React.FC = () => {
         }`} />
       </div>
       <div className="text-left">
-        <h3 className="font-medium text-white text-sm">Challenge</h3> {/* Smaller font size */}
-        <p className="text-xs text-white/60">Challenge users</p> {/* Smaller font size */}
+        <h3 className="font-medium text-black text-sm">Challenge</h3> {/* Smaller font size */}
+        <p className="text-xs text-black/60">Challenge users</p> {/* Smaller font size */}
       </div>
     </button>
   </div>
