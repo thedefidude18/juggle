@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Wallet, ArrowUpRight, ArrowDownRight, Plus, Coins } from 'lucide-react';
+import { Wallet, ArrowDownRight, Coins, Plus } from 'lucide-react';
 import { useWallet } from '../hooks/useWallet';
 import PaystackWidget from './PaystackWidget';
 import LoadingSpinner from './LoadingSpinner';
@@ -30,37 +30,29 @@ const WalletCard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-[#242538] rounded-xl p-6 flex items-center justify-center">
+      <div className="bg-[#1e1e2e] rounded-xl p-6 flex items-center justify-center shadow-lg">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="bg-[#242538] rounded-xl p-6">
+    <div className="bg-[#1e1e2e] rounded-xl p-6 shadow-lg text-white">
       {/* Balance */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-white/60">Fiat Balance</p>
-            <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-[#CCFF00]" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold text-white">
+          <p className="text-gray-400">Total Balance</p>
+          <h2 className="text-2xl font-bold">
             ₦ {wallet?.balance.toLocaleString() || '0'}
           </h2>
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-white/60">Coins Balance</p>
-            <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center">
-              <Coins className="w-5 h-5 text-[#CCFF00]" />
-            </div>
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center bg-[#333] p-2 rounded-full">
+            <Wallet className="w-4 h-4 text-[#CCFF00]" />
           </div>
-          <h2 className="text-2xl font-bold text-white">
-            {wallet?.coins.toLocaleString() || '0'} Coins
-          </h2>
+          <div className="flex items-center bg-[#333] p-2 rounded-full">
+            <Coins className="w-4 h-4 text-[#CCFF00]" />
+          </div>
         </div>
       </div>
 
@@ -71,31 +63,20 @@ const WalletCard: React.FC = () => {
             setDepositType('fiat');
             setShowDeposit(true);
           }}
-          className="flex items-center gap-3 p-4 bg-[#1a1b2e] rounded-xl hover:bg-[#1a1b2e]/80 transition-colors"
+          className="flex flex-col items-center p-4 bg-[#333] rounded-lg hover:bg-[#444] transition-colors"
         >
-          <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center">
-            <ArrowDownRight className="w-5 h-5 text-[#CCFF00]" />
-          </div>
-          <div className="text-left">
-            <p className="text-white font-medium">Deposit</p>
-            <p className="text-white/60 text-sm">Add funds</p>
-          </div>
+          <ArrowDownRight className="w-6 h-6 text-[#CCFF00] mb-2" />
+          <p className="text-sm font-medium">Deposit</p>
         </button>
-
         <button
           onClick={() => {
             setDepositType('coins');
             setShowDeposit(true);
           }}
-          className="flex items-center gap-3 p-4 bg-[#1a1b2e] rounded-xl hover:bg-[#1a1b2e]/80 transition-colors"
+          className="flex flex-col items-center p-4 bg-[#333] rounded-lg hover:bg-[#444] transition-colors"
         >
-          <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center">
-            <Coins className="w-5 h-5 text-[#CCFF00]" />
-          </div>
-          <div className="text-left">
-            <p className="text-white font-medium">Buy Coins</p>
-            <p className="text-white/60 text-sm">Exchange</p>
-          </div>
+          <Coins className="w-6 h-6 text-[#CCFF00] mb-2" />
+          <p className="text-sm font-medium">Buy Coins</p>
         </button>
       </div>
 
@@ -107,23 +88,23 @@ const WalletCard: React.FC = () => {
               {depositType === 'fiat' ? 'Amount (₦)' : 'Amount (Coins)'}
             </label>
             <div className="relative">
-              <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40" />
+              <Plus className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="number"
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
-                className="w-full bg-[#1a1b2e] text-white pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
+                className="w-full bg-[#333] text-white pl-12 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
                 placeholder="Enter amount"
                 min="100"
               />
             </div>
             {depositType === 'coins' && depositAmount && (
-              <p className="mt-2 text-sm text-white/60">
+              <p className="mt-2 text-sm text-gray-400">
                 ≈ ₦{calculateFiat(parseInt(depositAmount)).toLocaleString()}
               </p>
             )}
             {depositType === 'fiat' && depositAmount && (
-              <p className="mt-2 text-sm text-white/60">
+              <p className="mt-2 text-sm text-gray-400">
                 ≈ {calculateCoins(parseInt(depositAmount)).toLocaleString()} Coins
               </p>
             )}
