@@ -47,7 +47,6 @@ const App: React.FC = () => {
     }
   }, [showSplash]);
 
-
   return (
     <>
       {showSplash ? (
@@ -62,8 +61,10 @@ const App: React.FC = () => {
       ) : (
         <Router>
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/events" element={<Events />} />
+            {/* Set Events as the new homepage */}
+            <Route path="/" element={<Events />} />
+            {/* Move the current Home page to a new path */}
+            <Route path="/home" element={<Home />} />
             <Route path="/games" element={<Games />} />
             <Route path="/games/challenge/:id" element={<ChallengeDetails />} />
             <Route

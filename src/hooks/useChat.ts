@@ -53,9 +53,8 @@ export function useChat() {
       setError(null);
       setLoading(true);
 
-      const { data, error: fetchError } = await supabase
-        .from('chats')
-        .select(`
+      console.log('Fetching chats with query:', {
+        select: `
           *,
           participants:chat_participants(
             user_id,
@@ -66,8 +65,11 @@ export function useChat() {
               status
             )
           )
-        `)
-        .order('updated_at', { ascending: false });
+        `,
+        order: 'updated_at',
+        ascending: false
+      });
+      
 
       if (fetchError) throw fetchError;
 

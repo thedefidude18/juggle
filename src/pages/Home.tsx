@@ -96,32 +96,32 @@ function Home() {
         {/* Hero Section */}
         <div className="text-center py-16">
           <h1 className="text-6xl font-bold text-[#333] font-syne">
-            Control your spendings <span className="text-[#9B51E0]">Magically</span>
+            Creative Kids Academy
           </h1>
           <p className="text-lg text-[#666] mt-4">
-            Manage your finances effortlessly with our intuitive tools.
+            Nurturing creativity and imagination in every child.
           </p>
           <button
             onClick={() => navigate('/dashboard')}
-            className="mt-8 px-8 py-4 bg-[#9B51E0] text-white rounded-full text-lg hover:bg-[#8243c1] transition-colors shadow-lg"
+            className="mt-8 px-8 py-4 bg-[#7DD25C] text-white rounded-full text-lg hover:bg-[#72c454] transition-colors shadow-lg"
           >
-            Get Started
+            Explore Courses
           </button>
         </div>
 
         {/* Search Bar */}
         <div className="flex items-center justify-center gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9B51E0]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7DD25C]" />
             <input
               type="text"
               value={searchQuery}
               onChange={handleSearch}
-              placeholder="Search events..."
-              className="w-full bg-white text-gray-800 pl-12 pr-4 py-3 rounded-xl border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#9B51E0] transition-shadow shadow-md"
+              placeholder="Search courses..."
+              className="w-full bg-white text-gray-800 pl-12 pr-4 py-3 rounded-xl border border-[#E0E0E0] focus:outline-none focus:ring-2 focus:ring-[#7DD25C] transition-shadow shadow-md"
             />
           </div>
-          <button className="p-3 bg-[#9B51E0] text-white rounded-xl hover:bg-[#8243c1] transition-colors shadow-md">
+          <button className="p-3 bg-[#7DD25C] text-white rounded-xl hover:bg-[#72c454] transition-colors shadow-md">
             <Filter className="w-5 h-5" />
           </button>
         </div>
@@ -130,7 +130,7 @@ function Home() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-bold text-[#333] font-syne">Categories</h2>
-            <button className="text-[#9B51E0] hover:underline text-sm font-medium">
+            <button className="text-[#7DD25C] hover:underline text-sm font-medium">
               View All
             </button>
           </div>
@@ -151,10 +151,10 @@ function Home() {
         {/* Featured Events */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-[#333] font-syne">Featured Events</h2>
+            <h2 className="text-3xl font-bold text-[#333] font-syne">Featured Courses</h2>
             <button
               onClick={() => navigate('/events')}
-              className="flex items-center gap-1 text-[#9B51E0] hover:underline text-sm font-medium"
+              className="flex items-center gap-1 text-[#7DD25C] hover:underline text-sm font-medium"
             >
               View All
               <ArrowRight className="w-4 h-4" />
@@ -162,7 +162,7 @@ function Home() {
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#9B51E0]"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#7DD25C]"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -180,8 +180,8 @@ function Home() {
         {/* Trending Groups */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-[#333] font-syne">Trending Groups</h2>
-            <button className="flex items-center gap-1 text-[#9B51E0] hover:underline text-sm font-medium">
+            <h2 className="text-3xl font-bold text-[#333] font-syne">Trending Activities</h2>
+            <button className="flex items-center gap-1 text-[#7DD25C] hover:underline text-sm font-medium">
               View All
               <ArrowRight className="w-4 h-4" />
             </button>
@@ -204,10 +204,10 @@ function Home() {
         {popularEvents.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-[#333] font-syne">Popular Events</h2>
+              <h2 className="text-3xl font-bold text-[#333] font-syne">Popular Activities</h2>
               <button
                 onClick={() => navigate('/events')}
-                className="flex items-center gap-1 text-[#9B51E0] hover:underline text-sm font-medium"
+                className="flex items-center gap-1 text-[#7DD25C] hover:underline text-sm font-medium"
               >
                 View All
                 <ArrowRight className="w-4 h-4" />

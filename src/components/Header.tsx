@@ -76,6 +76,19 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-4">
           {currentUser ? (
             <>
+
+<button 
+        onClick={() => navigate('/leaderboard')}
+        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+        aria-label="Notifications"
+      >
+        <img src="/src/leaderboard_activity.png" alt="Notifications Icon" className="w-5.4 h-6" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+            {unreadCount}
+          </span>
+        )}
+      </button>     
               <button 
         onClick={() => navigate('/messages')}
         className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -87,8 +100,9 @@ const Header: React.FC<HeaderProps> = ({
             {unreadMessages}
           </span>
         )}
-      </button
-      ><button 
+      </button> 
+      
+      <button 
         onClick={() => navigate('/notifications')}
         className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
         aria-label="Notifications"
@@ -99,8 +113,9 @@ const Header: React.FC<HeaderProps> = ({
             {unreadCount}
           </span>
         )}
-      </button
-      ><button 
+      </button>
+      
+      <button 
         onClick={() => navigate('/wallet')}
         className="bg-[#CCFF00] text-[#000000] px-4 py-2 rounded-full font-medium text-sm hover:bg-white/90 transition-colors"
       >

@@ -48,12 +48,6 @@ const MobileFooterNav: React.FC = () => {
       label: 'My Events',
     },
     {
-      id: 'myevents',
-      path: '/leaderboard',
-      icon: <img src="https:/src/leaderboard.png" alt="Events Icon" className="w-7 h-7" />,
-      label: 'Rank',
-    },
-    {
       id: 'profile',
       path: '/profile',
       icon: <img src="/src/profile.png" alt="Events Icon" className="w-6 h-6" />,
