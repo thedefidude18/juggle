@@ -4,6 +4,8 @@ import { useEvent } from '../hooks/useEvent';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import LoadingOverlay from './LoadingOverlay';
+import { supabase } from '../lib/supabase'; // If using absolute paths
+
 
 interface CreateEventFormProps {
   onClose: () => void;
