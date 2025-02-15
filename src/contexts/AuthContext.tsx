@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
-import { supabase } from '../lib/supabase';
+import { supabase, getUserByPrivyID } from '../lib/supabase';
 import { useToast } from './ToastContext';
 
 interface User {
   id: string;
+  privy_id: string;
   name?: string;
   username?: string;
   avatar_url?: string;
@@ -38,62 +39,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = useCallback(async () => {
     if (!authenticated || !user) {
+      console.log('🔴 User not authenticated or Privy user is null.');
       setCurrentUser(null);
       setLoading(false);
       return;
     }
 
     try {
-      // Initialize user wallet first
-      const { data: walletId, error: walletError } = await supabase
-        .rpc('initialize_user_wallet', { 
-          user_id: user.id 
-        });
+      const privyDID = user.id; // Privy Decentralized ID
+      const userUUID = user.id; // Fallback if Privy ID fails
 
-      if (walletError) {
-        console.error('Error initializing wallet:', walletError);
-      }
+      console.log('🟢 Fetching user profile from Supabase:', { privyDID, userUUID });
 
-      // Get user profile
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
+      // Fetch user by privy_id
+      const { data: profile, error } = await getUserByPrivyID(privyDID, userUUID);
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      if (error) {
+        console.error('❌ Supabase getUserByPrivyID Error:', error);
+        if (error.code !== 'PGRST116') throw error;
       }
 
       if (profile) {
-        setCurrentUser({
-          ...profile,
-          email: user.email
-        });
+        console.log('✅ User profile found:', profile);
+        setCurrentUser({ ...profile, email: user.email });
       } else {
-        // Initialize user if not exists
+        console.log('⚠️ No user found. Creating a new profile...');
+
+        // Create new user
         const { data: newProfile, error: createError } = await supabase
           .from('users')
           .insert({
-            id: user.id,
+            id: userUUID,
+            privy_id: privyDID,
             name: user.name || '',
-            username: user.username || `user_${user.id.slice(0, 8)}`,
-            avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
+            username: user.username || `user_${userUUID.slice(0, 8)}`,
+            avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userUUID}`
           })
           .select()
           .single();
 
-        if (createError) throw createError;
-        setCurrentUser({
-          ...newProfile,
-          email: user.email
-        });
+        if (createError) {
+          console.error('❌ Supabase Insert Error:', createError);
+          throw createError;
+        }
+
+        console.log('✅ New user created:', newProfile);
+        setCurrentUser({ ...newProfile, email: user.email });
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
-      // Set minimal user data on error
+      console.error('🔥 Error refreshing user:', error);
       setCurrentUser({
         id: user.id,
+        privy_id: user.id,
         email: user.email
       });
     } finally {
@@ -108,8 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async () => {
     try {
       await privyLogin();
+      console.log('✅ Login successful.');
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       toast.showError('Failed to sign in. Please try again.');
     }
   }, [privyLogin, toast]);
@@ -119,8 +117,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await privyLogout();
       setCurrentUser(null);
       toast.showSuccess('Signed out successfully');
+      console.log('✅ Logout successful.');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('❌ Logout error:', error);
       toast.showError('Failed to sign out. Please try again.');
     }
   }, [privyLogout, toast]);

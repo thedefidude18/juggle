@@ -28,29 +28,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Add connection health check with retry logic
+// Connection check & retry logic
 let isConnected = true;
 let retryCount = 0;
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
-
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') {
-    isConnected = false;
-  } else if (event === 'SIGNED_IN') {
-    isConnected = true;
-    retryCount = 0;
-  }
-});
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const checkConnection = async () => {
   try {
     const { error } = await supabase.from('users').select('id').limit(1);
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
+    
     isConnected = true;
     retryCount = 0;
     return true;
@@ -58,7 +48,6 @@ export const checkConnection = async () => {
     console.error('Connection check failed:', error);
     isConnected = false;
 
-    // Implement retry logic
     if (retryCount < MAX_RETRIES) {
       retryCount++;
       await wait(RETRY_DELAY * retryCount);
@@ -71,7 +60,16 @@ export const checkConnection = async () => {
 
 export const getConnectionStatus = () => isConnected;
 
-// Add retry wrapper for Supabase operations
+// Utility function to query user by privy_id or fallback to id
+export const getUserByPrivyID = async (privyDID: string, userUUID: string) => {
+  return await supabase
+    .from('users')
+    .select('*')
+    .or(`privy_id.eq.${privyDID},id.eq.${userUUID}`)
+    .maybeSingle();
+};
+
+// Retry wrapper for Supabase operations
 export const withRetry = async <T>(
   operation: () => Promise<T>,
   maxRetries: number = MAX_RETRIES

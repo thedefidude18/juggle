@@ -1,22 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 const SignIn: React.FC = () => {
-  const { login } = usePrivy();
+  const { login: privyLogin } = usePrivy();
+  const { currentUser, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Redirect authenticated users to the dashboard
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
+
   // Handle Privy Sign-In
   const handlePrivySignIn = async () => {
     try {
-      await login();
-      toast.showSuccess('Signed in with Privy!');
+      await privyLogin();
+      toast.showSuccess('Signed in successfully!');
     } catch (error) {
       console.error('Privy Sign-in error:', error);
       toast.showError('Failed to sign in. Please try again.');
@@ -28,7 +37,7 @@ const SignIn: React.FC = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -40,7 +49,27 @@ const SignIn: React.FC = () => {
       console.error('Supabase Sign-in error:', error);
     } else {
       toast.showSuccess('Signed in successfully!');
-      navigate('/dashboard'); // Redirect to a page after login
+      navigate('/dashboard');
+    }
+  };
+
+  // Handle Forgot Password
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast.showError('Please enter your email to reset your password.');
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    setLoading(false);
+
+    if (error) {
+      toast.showError(error.message);
+    } else {
+      toast.showSuccess('Password reset link sent! Check your email.');
     }
   };
 
@@ -61,6 +90,7 @@ const SignIn: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={loading}
           />
           <input
             type="password"
@@ -69,15 +99,24 @@ const SignIn: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading}
           />
           <button
             type="submit"
             className="w-full px-6 py-3 rounded-lg font-semibold bg-[#CCFF00] text-black hover:bg-[#b3ff00] transition-colors transform hover:scale-105"
-            disabled={loading}
+            disabled={loading || authLoading}
           >
             {loading ? 'Signing in...' : 'Sign in with Email'}
           </button>
         </form>
+
+        <button
+          onClick={handleForgotPassword}
+          className="mt-2 text-sm text-[#CCFF00] hover:underline"
+          disabled={loading}
+        >
+          Forgot Password?
+        </button>
 
         <div className="my-4 text-gray-500 text-sm">OR</div>
 
@@ -85,6 +124,7 @@ const SignIn: React.FC = () => {
         <button
           onClick={handlePrivySignIn}
           className="w-full max-w-xs mx-auto flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-semibold bg-[#CCFF00] text-black hover:bg-[#b3ff00] transition-colors transform hover:scale-105"
+          disabled={authLoading}
         >
           Sign In with Privy
         </button>

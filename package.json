@@ -25,6 +25,7 @@
     "react-router-dom": "^6.22.2",
     "react-toastify": "^10.0.6",
     "stream-browserify": "^3.0.0",
+    "uuid": "^11.0.5",
     "vercel": "^41.0.3"
   },
   "devDependencies": {

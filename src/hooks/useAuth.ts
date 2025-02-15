@@ -16,11 +16,13 @@ export function useAuth() {
       return;
     }
 
+    const userId = user.id.replace('did:privy:', ''); // ✅ FIX: Remove prefix
+
     try {
       const { data: profile, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', userId) // ✅ FIX: Search as a string, not UUID
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -33,14 +35,14 @@ export function useAuth() {
           email: user.email
         });
       } else {
-        // Initialize user if not exists
+        // ✅ FIX: Ensure ID is stored as TEXT
         const { data: newProfile, error: createError } = await supabase
           .from('users')
           .insert({
-            id: user.id,
+            id: userId,
             name: user.name || '',
-            username: user.username || `user_${user.id.slice(0, 8)}`,
-            avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`
+            username: user.username || `user_${userId.slice(0, 8)}`,
+            avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`
           })
           .select()
           .single();
@@ -53,9 +55,8 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Error refreshing user:', error);
-      // Set minimal user data on error
       setCurrentUser({
-        id: user.id,
+        id: userId,
         email: user.email
       });
     } finally {
