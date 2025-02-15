@@ -41,6 +41,7 @@ export function useProfile() {
         toast.showError('Profile not found');
         return null;
       }
+      
 
       // Map the explicit column names back to our interface
       const profile: Profile = {

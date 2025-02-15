@@ -36,22 +36,17 @@ export function useWallet() {
     }
 
     try {
-      // Initialize wallet first
-      const { data: walletId, error: initError } = await supabase
-        .rpc('initialize_user_wallet', { 
-          user_id: currentUser.id 
-        });
+      const { data: walletId, error: initError } = await supabase.rpc('initialize_user_wallet', { 
+        user_id: currentUser.id 
+      });
 
       if (initError) {
         console.error('Error initializing wallet:', initError);
         throw initError;
       }
 
-      if (!walletId) {
-        throw new Error('Failed to initialize wallet');
-      }
+      if (!walletId) throw new Error('Failed to initialize wallet');
 
-      // Fetch wallet details
       const { data: walletData, error: fetchError } = await supabase
         .from('wallets')
         .select('*')
@@ -132,40 +127,35 @@ export function useWallet() {
   }, [fetchWallet]);
 
   useEffect(() => {
-    if (wallet?.id) {
-      fetchTransactions();
+    if (!wallet?.id) return;
 
-      // Subscribe to wallet changes
-      const walletSubscription = supabase
-        .channel('wallet_changes')
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'wallets',
-          filter: `id=eq.${wallet.id}`
-        }, () => {
-          fetchWallet();
-        })
-        .subscribe();
+    fetchTransactions();
 
-      // Subscribe to transaction changes
-      const transactionSubscription = supabase
-        .channel('transaction_changes')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'transactions',
-          filter: `wallet_id=eq.${wallet.id}`
-        }, () => {
-          fetchTransactions();
-        })
-        .subscribe();
+    // Subscribe to wallet and transaction updates
+    const walletSubscription = supabase
+      .channel('wallet_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'wallets',
+        filter: `id=eq.${wallet.id}`
+      }, () => fetchWallet())
+      .subscribe();
 
-      return () => {
-        walletSubscription.unsubscribe();
-        transactionSubscription.unsubscribe();
-      };
-    }
+    const transactionSubscription = supabase
+      .channel('transaction_changes')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'transactions',
+        filter: `wallet_id=eq.${wallet.id}`
+      }, () => fetchTransactions())
+      .subscribe();
+
+    return () => {
+      walletSubscription?.unsubscribe();
+      transactionSubscription?.unsubscribe();
+    };
   }, [wallet?.id, fetchWallet, fetchTransactions]);
 
   return {

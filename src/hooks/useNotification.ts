@@ -2,6 +2,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { privyDIDtoUUID } from '../utils/auth';
+
+
 
 export type NotificationType = 
   | 'event_win' 
@@ -41,8 +44,11 @@ export function useNotification() {
   const { currentUser } = useAuth();
   const toast = useToast();
 
+  const userId = currentUser?.id ? privyDIDtoUUID(currentUser.id) : null;
+
+
   const fetchNotifications = useCallback(async () => {
-    if (!currentUser?.id) {
+    if (!userId) {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
@@ -53,7 +59,7 @@ export function useNotification() {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', currentUser.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -66,17 +72,17 @@ export function useNotification() {
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.id, toast]);
+  }, [userId, toast]);
 
   const markAsRead = useCallback(async (notificationId: string) => {
-    if (!currentUser?.id) return;
+    if (!userId) return;
 
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
         .eq('id', notificationId)
-        .eq('user_id', currentUser.id);
+        .eq('user_id', userId);
 
       if (error) throw error;
 
@@ -92,16 +98,16 @@ export function useNotification() {
       console.error('Error marking notification as read:', error);
       toast.showError('Failed to mark notification as read');
     }
-  }, [currentUser?.id, toast]);
+  }, [userId, toast]);
 
   const markAllAsRead = useCallback(async () => {
-    if (!currentUser?.id) return;
+    if (!userId) return;
 
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ read_at: new Date().toISOString() })
-        .eq('user_id', currentUser.id)
+        .eq('user_id', userId)
         .is('read_at', null);
 
       if (error) throw error;
@@ -114,25 +120,23 @@ export function useNotification() {
       console.error('Error marking all notifications as read:', error);
       toast.showError('Failed to mark notifications as read');
     }
-  }, [currentUser?.id, toast]);
+  }, [userId, toast]);
 
   useEffect(() => {
     fetchNotifications();
 
-    // Subscribe to new notifications
-    if (currentUser?.id) {
+    if (userId) {
       const subscription = supabase
         .channel('notifications')
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${currentUser.id}`
+          filter: `user_id=eq.${userId}`
         }, payload => {
           setNotifications(prev => [payload.new as Notification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
-          // Show toast for new notification
           toast.showInfo(payload.new.title);
         })
         .subscribe();
@@ -141,7 +145,7 @@ export function useNotification() {
         subscription.unsubscribe();
       };
     }
-  }, [currentUser?.id, fetchNotifications, toast]);
+  }, [userId, fetchNotifications, toast]);
 
   return {
     notifications,

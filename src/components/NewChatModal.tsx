@@ -92,6 +92,27 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
     fetchFriendRequests();
   }, [currentUser]);
 
+
+  const sendFriendRequest = async (senderId: string, recipientId: string) => {
+    try {
+      const response = await fetch("/api/friend-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senderId, recipientId }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to send friend request");
+      }
+  
+      return response.json();
+    } catch (error) {
+      console.error("Error sending friend request:", error);
+      throw error;
+    }
+  };
+  
+
   const handleSendRequest = async (user: User) => {
     if (!currentUser) return;
 
@@ -207,6 +228,7 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
     }
   };
 
+  
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <div className="bg-light-card dark:bg-dark-card rounded-2xl w-full max-w-md">
