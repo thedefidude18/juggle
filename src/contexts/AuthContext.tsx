@@ -45,54 +45,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    const privyDID = user.id; // Example: did:privy:cm5dqsjle01hpqiuy5gskgv5w
+    console.log('🟢 Fetching user profile with Privy ID:', privyDID);
+
     try {
-      const privyDID = user.id; // Privy Decentralized ID
-      const userUUID = user.id; // Fallback if Privy ID fails
-
-      console.log('🟢 Fetching user profile from Supabase:', { privyDID, userUUID });
-
-      // Fetch user by privy_id
-      const { data: profile, error } = await getUserByPrivyID(privyDID, userUUID);
+      const { data: profile, error } = await getUserByPrivyID(privyDID);
 
       if (error) {
         console.error('❌ Supabase getUserByPrivyID Error:', error);
-        if (error.code !== 'PGRST116') throw error;
+        throw error;
       }
 
       if (profile) {
-        console.log('✅ User profile found:', profile);
-        setCurrentUser({ ...profile, email: user.email });
+        console.log('✅ User found:', profile);
+        setCurrentUser(profile);
       } else {
-        console.log('⚠️ No user found. Creating a new profile...');
+        console.log('⚠️ No user found. Creating new profile...');
 
-        // Create new user
-        const { data: newProfile, error: createError } = await supabase
+        const { data: newUser, error: insertError } = await supabase
           .from('users')
           .insert({
-            id: userUUID,
-            privy_id: privyDID,
-            name: user.name || '',
-            username: user.username || `user_${userUUID.slice(0, 8)}`,
-            avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userUUID}`
+            privy_id: privyDID, // Now stored as TEXT
+            name: user.name || 'Anonymous',
+            avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${privyDID}`
           })
           .select()
           .single();
 
-        if (createError) {
-          console.error('❌ Supabase Insert Error:', createError);
-          throw createError;
+        if (insertError) {
+          console.error('❌ Error inserting new user:', insertError);
+          throw insertError;
         }
 
-        console.log('✅ New user created:', newProfile);
-        setCurrentUser({ ...newProfile, email: user.email });
+        console.log('✅ New user created:', newUser);
+        setCurrentUser(newUser);
       }
     } catch (error) {
       console.error('🔥 Error refreshing user:', error);
-      setCurrentUser({
-        id: user.id,
-        privy_id: user.id,
-        email: user.email
-      });
+      setCurrentUser(null);
     } finally {
       setLoading(false);
     }
@@ -105,9 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async () => {
     try {
       await privyLogin();
-      console.log('✅ Login successful.');
     } catch (error) {
-      console.error('❌ Login error:', error);
+      console.error('Login error:', error);
       toast.showError('Failed to sign in. Please try again.');
     }
   }, [privyLogin, toast]);
@@ -117,9 +106,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await privyLogout();
       setCurrentUser(null);
       toast.showSuccess('Signed out successfully');
-      console.log('✅ Logout successful.');
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error('Logout error:', error);
       toast.showError('Failed to sign out. Please try again.');
     }
   }, [privyLogout, toast]);

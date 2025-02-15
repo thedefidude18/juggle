@@ -61,13 +61,14 @@ export const checkConnection = async () => {
 export const getConnectionStatus = () => isConnected;
 
 // Utility function to query user by privy_id or fallback to id
-export const getUserByPrivyID = async (privyDID: string, userUUID: string) => {
-  return await supabase
+export const getUserByPrivyID = async (privyID: string) => {
+  return supabase
     .from('users')
     .select('*')
-    .or(`privy_id.eq.${privyDID},id.eq.${userUUID}`)
-    .maybeSingle();
+    .eq('privy_id', privyID) // Ensure `privy_id` is treated as text
+    .maybeSingle(); // Prevents errors if no user is found
 };
+
 
 // Retry wrapper for Supabase operations
 export const withRetry = async <T>(
