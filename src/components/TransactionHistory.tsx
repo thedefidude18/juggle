@@ -4,7 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Send } from 'lucide-react';
 import { useWallet, Transaction } from '../hooks/useWallet';
 
 const TransactionHistory: React.FC = () => {
-  const { transactions, loading } = useWallet();
+  const { transactions = [], loading } = useWallet();
 
   const getTransactionIcon = (type: Transaction['type']) => {
     switch (type) {
@@ -14,6 +14,8 @@ const TransactionHistory: React.FC = () => {
         return <ArrowUpRight className="w-5 h-5 text-red-500" />;
       case 'transfer':
         return <Send className="w-5 h-5 text-[#CCFF00]" />;
+      default:
+        return null;
     }
   };
 
@@ -32,7 +34,7 @@ const TransactionHistory: React.FC = () => {
       </div>
 
       <div className="divide-y divide-white/10">
-        {transactions.length === 0 ? (
+        {!transactions || transactions.length === 0 ? (
           <div className="p-8 text-center text-white/60">
             No transactions yet
           </div>
@@ -52,20 +54,11 @@ const TransactionHistory: React.FC = () => {
                     transaction.type === 'withdrawal' ? 'text-red-500' : 
                     'text-[#CCFF00]'
                   }`}>
-                    {transaction.type === 'deposit' ? '+' : '-'} ₦{transaction.amount.toLocaleString()}
+                    {transaction.type === 'deposit' ? '+' : '-'}₦{transaction.amount}
                   </span>
                 </div>
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-white/60 text-sm">
-                    {format(new Date(transaction.created_at), 'MMM d, yyyy HH:mm')}
-                  </span>
-                  <span className={`text-sm ${
-                    transaction.status === 'completed' ? 'text-green-500' :
-                    transaction.status === 'failed' ? 'text-red-500' :
-                    'text-yellow-500'
-                  }`}>
-                    {transaction.status}
-                  </span>
+                <div className="text-sm text-white/60">
+                  {format(new Date(transaction.created_at), 'MMM d, yyyy HH:mm')}
                 </div>
               </div>
             </div>

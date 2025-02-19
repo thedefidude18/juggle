@@ -1,32 +1,44 @@
 import React, { useState } from 'react';
-import { Trophy, Search, Plus, Users, Clock } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import MobileFooterNav from '../components/MobileFooterNav';
 import EventChat from '../components/EventChat';
 import CategoryButton from '../components/CategoryButton';
+import { Event } from '../hooks/useEvent';
 
 const Events: React.FC = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showChat, setShowChat] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   // Categories with icons and counts
   const categories = [
-    { id: 'create', icon: <img src="/src/createvent.svg" alt="Create Icon" className="w-13 h-13" />, label: 'Create', primary: true },
-    { id: 'sports', icon: <img src="/src/sportscon.svg" alt="Create Icon" className="w-13 h-13" />,  label: 'Sports', count: 28, chatRoom: {
-      id: 'sports-room',
-      title: 'Sports Events',
-      creator: {
-        id: 'system',
-        name: 'Bantah Sports',
-        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sports'
-      },
-      pool: { amount: 0, participants: 0 },
-      start_time: new Date().toISOString(),
-      end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    }},
+    { 
+      id: 'create', 
+      icon: <img src="/assets/images/myevents-icon.png" alt="Create Icon" className="w-13 h-13" />, 
+      label: 'Create', 
+      primary: true 
+    },
+    { 
+      id: 'sports', 
+      icon: <img src="/assets/images/sportscon.svg" alt="Sports Icon" className="w-13 h-13" />,  
+      label: 'Sports', 
+      count: 28, 
+      chatRoom: {
+        id: 'sports-room',
+        title: 'Sports Events',
+        creator: {
+          id: 'system',
+          name: 'Bantah Sports',
+          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=sports'
+        },
+        pool: { amount: 0, participants: 0 },
+        start_time: new Date().toISOString(),
+        end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
     {
       id: 'music',
       icon: <img src="/src/musicsvg.svg" alt="Create Icon" className="w-13 h-13" />, 
@@ -166,7 +178,7 @@ const Events: React.FC = () => {
     : mockEvents.filter(event => event.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-[#EDEDED] pb-[72px]">
+    <div className="min-h-screen bg-light-bg dark:bg-dark-bg pb-[72px]">
       <Header />
 
       {/* Categories */}

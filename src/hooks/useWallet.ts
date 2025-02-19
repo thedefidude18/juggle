@@ -1,168 +1,97 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { privyDIDtoUUID } from '../utils/auth';
 
-export interface Wallet {
-  id: number;
+interface Wallet {
+  id: string;
   user_id: string;
   balance: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Transaction {
-  id: string;
-  type: 'deposit' | 'withdrawal' | 'transfer';
-  amount: number;
-  reference: string;
-  status: 'pending' | 'completed' | 'failed';
+  currency: string;
   created_at: string;
+  updated_at: string;
 }
 
 export function useWallet() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { currentUser } = useAuth();
   const toast = useToast();
 
-  const fetchWallet = useCallback(async () => {
-    if (!currentUser?.id) {
-      setWallet(null);
-      setTransactions([]);
-      setLoading(false);
-      return;
-    }
+  const initializeWallet = useCallback(async () => {
+    if (!currentUser?.id) return null;
 
     try {
-      const { data: walletId, error: initError } = await supabase.rpc('initialize_user_wallet', { 
-        user_id: currentUser.id 
-      });
-
-      if (initError) {
-        console.error('Error initializing wallet:', initError);
-        throw initError;
-      }
-
-      if (!walletId) throw new Error('Failed to initialize wallet');
-
-      const { data: walletData, error: fetchError } = await supabase
+      const userId = privyDIDtoUUID(currentUser.id);
+      
+      const { data: existingWallet, error: fetchError } = await supabase
         .from('wallets')
         .select('*')
-        .eq('id', walletId)
+        .eq('user_id', userId)
         .single();
 
-      if (fetchError) {
-        console.error('Error fetching wallet:', fetchError);
-        throw fetchError;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        toast.showError('Failed to fetch wallet');
+        throw new Error('Failed to fetch wallet');
       }
 
-      setWallet(walletData);
+      if (existingWallet) {
+        return existingWallet;
+      }
+
+      const { data: newWallet, error: createError } = await supabase
+        .from('wallets')
+        .insert([
+          {
+            user_id: userId,
+            balance: 0,
+            currency: 'NGN'
+          }
+        ])
+        .select()
+        .single();
+
+      if (createError) {
+        toast.showError('Failed to create wallet');
+        throw new Error('Failed to create wallet');
+      }
+
+      toast.showSuccess('Wallet created successfully');
+      return newWallet;
+    } catch (error) {
+      console.error('Wallet initialization error:', error);
+      return null;
+    }
+  }, [currentUser, toast]);
+
+  const fetchWallet = useCallback(async () => {
+    try {
+      setLoading(true);
+      const walletData = await initializeWallet();
+      
+      if (walletData) {
+        setWallet(walletData);
+      } else {
+        toast.showError('Unable to load wallet');
+      }
     } catch (error) {
       console.error('Error fetching wallet:', error);
-      setWallet(null);
+      toast.showError('Failed to load wallet');
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.id]);
-
-  const fetchTransactions = useCallback(async () => {
-    if (!wallet?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .or(`wallet_id.eq.${wallet.id},recipient_wallet_id.eq.${wallet.id}`)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTransactions(data || []);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-      setTransactions([]);
-    }
-  }, [wallet?.id]);
-
-  const transfer = useCallback(async (recipientId: string, amount: number) => {
-    if (!wallet?.id || !currentUser) {
-      toast.showError('Please sign in to make a transfer');
-      return null;
-    }
-
-    try {
-      const reference = `TRF_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-      const { data: recipientWallet, error: recipientError } = await supabase
-        .from('wallets')
-        .select('id')
-        .eq('user_id', recipientId)
-        .single();
-
-      if (recipientError) throw recipientError;
-
-      const { data, error } = await supabase.rpc('transfer_funds', {
-        sender_wallet_id: wallet.id,
-        recipient_wallet_id: recipientWallet.id,
-        amount,
-        reference
-      });
-
-      if (error) throw error;
-
-      await fetchWallet();
-      await fetchTransactions();
-      toast.showSuccess('Transfer successful!');
-      return data;
-    } catch (error) {
-      console.error('Error transferring funds:', error);
-      toast.showError('Failed to transfer funds');
-      return null;
-    }
-  }, [wallet?.id, currentUser, fetchWallet, fetchTransactions, toast]);
+  }, [initializeWallet, toast]);
 
   useEffect(() => {
-    fetchWallet();
-  }, [fetchWallet]);
-
-  useEffect(() => {
-    if (!wallet?.id) return;
-
-    fetchTransactions();
-
-    // Subscribe to wallet and transaction updates
-    const walletSubscription = supabase
-      .channel('wallet_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'wallets',
-        filter: `id=eq.${wallet.id}`
-      }, () => fetchWallet())
-      .subscribe();
-
-    const transactionSubscription = supabase
-      .channel('transaction_changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'transactions',
-        filter: `wallet_id=eq.${wallet.id}`
-      }, () => fetchTransactions())
-      .subscribe();
-
-    return () => {
-      walletSubscription?.unsubscribe();
-      transactionSubscription?.unsubscribe();
-    };
-  }, [wallet?.id, fetchWallet, fetchTransactions]);
+    if (currentUser?.id) {
+      fetchWallet();
+    }
+  }, [currentUser, fetchWallet]);
 
   return {
     wallet,
-    transactions,
     loading,
-    transfer,
     fetchWallet
   };
 }

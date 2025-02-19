@@ -1,127 +1,135 @@
-import React, { useState, useEffect } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
-import { usePrivy } from '@privy-io/react-auth';
-
-// Import components
-import SplashScreen from './components/SplashScreen';
-import LoadingSpinner from './components/LoadingSpinner'; // Import your LoadingSpinner component
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { useAuth } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Import pages
 import Home from './pages/Home';
 import Events from './pages/Events';
 import Games from './pages/Games';
-import ChallengeDetails from './pages/ChallengeDetails';
-import Create from './pages/Create';
-import Leaderboard from './pages/Leaderboard';
-import MyEvents from './pages/MyEvents';
 import Profile from './pages/Profile';
-import ProfileSettings from './pages/ProfileSettings';
 import Settings from './pages/Settings';
-import Privacy from './pages/Privacy';
-import Help from './pages/Help';
-import Referral from './pages/Referral';
 import Wallet from './pages/Wallet';
-import Notifications from './pages/Notifications';
-import Messages from './pages/Messages';
 import SignIn from './pages/SignIn';
+import Create from './pages/Create';
+import Referral from './pages/Referral';
+import Help from './pages/Help';
+import Privacy from './pages/Privacy';
+import ChallengeDetails from './pages/ChallengeDetails';
+import ProfileSettings from './pages/ProfileSettings';
 import AdminDashboard from './pages/AdminDashboard';
+import MyEvents from './pages/MyEvents';
+import Leaderboard from './pages/Leaderboard';
+import Messages from './pages/Messages';
+import Notifications from './pages/Notifications';
 
-const App: React.FC = () => {
-  const { ready, authenticated } = usePrivy();
-  const [showSplash, setShowSplash] = useState(true);
-  const [showLoading, setShowLoading] = useState(false);
-
-  useEffect(() => {
-    if (!showSplash) {
-      // Simulate a delay for the loading spinner
-      const loadingTimer = setTimeout(() => {
-        setShowLoading(false);
-      }, 3000); // Display loading spinner for 3 seconds
-
-      return () => clearTimeout(loadingTimer);
-    }
-  }, [showSplash]);
+const AppRoutes = () => {
+  const { currentUser: authenticated } = useAuth();
 
   return (
-    <>
-      {showSplash ? (
-        <SplashScreen onComplete={() => {
-          setShowSplash(false);
-          setShowLoading(true);
-        }} />
-      ) : showLoading ? (
-        <div className="min-h-screen bg-[#1a1b2e] flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      ) : (
-        <Router>
-          <Routes>
-            {/* Set Events as the new homepage */}
-            <Route path="/" element={<Events />} />
-            {/* Move the current Home page to a new path */}
-            <Route path="/home" element={<Home />} />
-            <Route path="/games" element={<Games />} />
-            <Route path="/games/challenge/:id" element={<ChallengeDetails />} />
-            <Route
-              path="/create"
-              element={authenticated ? <Create /> : <SignIn />}
-            />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route
-              path="/myevents"
-              element={authenticated ? <MyEvents /> : <SignIn />}
-            />
-            <Route
-              path="/profile"
-              element={authenticated ? <Profile /> : <SignIn />}
-            />
-            <Route
-              path="/settings/profile"
-              element={authenticated ? <ProfileSettings /> : <SignIn />}
-            />
-            <Route
-              path="/settings"
-              element={authenticated ? <Settings /> : <SignIn />}
-            />
-            <Route
-              path="/settings/privacy"
-              element={authenticated ? <Privacy /> : <SignIn />}
-            />
-            <Route path="/help" element={<Help />} />
-            <Route
-              path="/referral"
-              element={authenticated ? <Referral /> : <SignIn />}
-            />
-            <Route
-              path="/wallet"
-              element={authenticated ? <Wallet /> : <SignIn />}
-            />
-            <Route
-              path="/notifications"
-              element={authenticated ? <Notifications /> : <SignIn />}
-            />
-            <Route
-              path="/messages"
-              element={authenticated ? <Messages /> : <SignIn />}
-            />
-            <Route
-              path="/signin"
-              element={!authenticated ? <SignIn /> : <Navigate to="/" replace />}
-            />
-            <Route
-              path="/admin"
-              element={authenticated ? <AdminDashboard /> : <SignIn />}
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      )}
-    </>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/help" element={<Help />} />
+      <Route path="/settings/privacy" element={<Privacy />} />
+      
+      {/* Protected routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      } />
+      <Route path="/events" element={
+        <ProtectedRoute>
+          <Events />
+        </ProtectedRoute>
+      } />
+      <Route path="/myevents" element={
+        <ProtectedRoute>
+          <MyEvents />
+        </ProtectedRoute>
+      } />
+      <Route path="/games" element={
+        <ProtectedRoute>
+          <Games />
+        </ProtectedRoute>
+      } />
+      <Route path="/challenge/:id" element={
+        <ProtectedRoute>
+          <ChallengeDetails />
+        </ProtectedRoute>
+      } />
+      <Route path="/create" element={
+        <ProtectedRoute>
+          <Create />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings/profile" element={
+        <ProtectedRoute>
+          <ProfileSettings />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <Settings />
+        </ProtectedRoute>
+      } />
+      <Route path="/referral" element={
+        <ProtectedRoute>
+          <Referral />
+        </ProtectedRoute>
+      } />
+      <Route path="/wallet" element={
+        <ProtectedRoute>
+          <Wallet />
+        </ProtectedRoute>
+      } />
+      <Route path="/leaderboard" element={
+        <ProtectedRoute>
+          <Leaderboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <Notifications />
+        </ProtectedRoute>
+      } />
+
+      {/* Admin routes */}
+      <Route path="/admin" element={
+        <ProtectedRoute requireAdmin={true}>
+          <AdminDashboard />
+        </ProtectedRoute>
+      } />
+
+      {/* Default redirect */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <ToastProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ToastProvider>
+    </Router>
   );
 };
 

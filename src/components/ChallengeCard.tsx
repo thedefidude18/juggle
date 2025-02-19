@@ -72,6 +72,8 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
             </div>
           </div>
           <button
+            type="button"
+            aria-label="Share challenge"
             onClick={() => setShowShareModal(true)}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
           >

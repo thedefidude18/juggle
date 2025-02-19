@@ -76,51 +76,45 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-4">
           {currentUser ? (
             <>
-
-<button 
-        onClick={() => navigate('/leaderboard')}
-        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-        aria-label="Notifications"
-      >
-        <img src="/src/leaderboard_activity.png" alt="Notifications Icon" className="w-5.4 h-6" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-            {unreadCount}
-          </span>
-        )}
-      </button>     
               <button 
-        onClick={() => navigate('/messages')}
-        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-        aria-label="Messages"
-      >
-        <img src="/src/chat_icon.png" alt="Messages Icon" className="w-6 h-6" />
-        {unreadMessages > 0 && (
-          <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-            {unreadMessages}
-          </span>
-        )}
-      </button> 
-      
-      <button 
-        onClick={() => navigate('/notifications')}
-        className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
-        aria-label="Notifications"
-      >
-        <img src="/src/notifiblue.png" alt="Notifications Icon" className="w-5.4 h-6" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-            {unreadCount}
-          </span>
-        )}
-      </button>
-      
-      <button 
-        onClick={() => navigate('/wallet')}
-        className="bg-[#CCFF00] text-[#000000] px-4 py-2 rounded-full font-medium text-sm hover:bg-white/90 transition-colors"
-      >
-        ₦ {wallet?.balance?.toLocaleString() || '0.00'}
-      </button>
+                onClick={() => navigate('/leaderboard')}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Leaderboard"
+              >
+                <img src="/src/leaderboard_activity.png" alt="Leaderboard Icon" className="w-5.4 h-6" />
+              </button>     
+              <button 
+                onClick={() => navigate('/messages')}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Messages"
+              >
+                <img src="/src/chat_icon.png" alt="Messages Icon" className="w-6 h-6" />
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#CCFF00] text-black text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {unreadMessages}
+                  </span>
+                )}
+              </button> 
+              
+              <button 
+                onClick={() => navigate('/notifications')}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Notifications"
+              >
+                <img src="/src/notifiblue.png" alt="Notifications Icon" className="w-5.4 h-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              
+              <button 
+                onClick={() => navigate('/wallet')}
+                className="bg-[#CCFF00] text-[#000000] px-4 py-2 rounded-full font-medium text-sm hover:bg-white/90 transition-colors"
+              >
+                ��� {wallet?.balance?.toLocaleString() || '0.00'}
+              </button>
             </>
           ) : (
             <button
@@ -138,3 +132,10 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 export default Header;
+
+
+
+
+
+
+

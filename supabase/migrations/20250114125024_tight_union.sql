@@ -96,3 +96,35 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION handle_event_changes()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- For new events
+  IF (TG_OP = 'INSERT') THEN
+    -- Your insert-specific logic here
+    RETURN NEW;
+  
+  -- For updated events
+  ELSIF (TG_OP = 'UPDATE') THEN
+    -- Your update-specific logic here
+    RETURN NEW;
+  
+  -- For deleted events
+  ELSIF (TG_OP = 'DELETE') THEN
+    -- Your delete-specific logic here
+    RETURN OLD;
+  END IF;
+  
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS on_event_changes ON events;
+
+-- Create new trigger
+CREATE TRIGGER on_event_changes
+  AFTER INSERT OR UPDATE OR DELETE ON events
+  FOR EACH ROW
+  EXECUTE FUNCTION handle_event_changes();

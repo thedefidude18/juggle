@@ -154,7 +154,7 @@ export function useChat() {
     }
   }, [currentUser?.id, toast]);
 
-  const sendMessage = useCallback(async (chatId: string | null, content: string) => {
+  const sendMessage = useCallback(async (chatId: string | number | null, content: string) => {
     if (!currentUser?.id || !content?.trim()) {
       throw new Error('Message content is required.');
     }
@@ -165,12 +165,15 @@ export function useChat() {
       const chatIdStr = String(chatId);
       console.log('Chat ID Type:', typeof chatIdStr, 'Value:', chatIdStr);
 
-      if (!chatIdStr || typeof chatIdStr !== 'string') {
+      if (!chatIdStr) {
         throw new Error('Chat ID is missing.');
       }
 
+      // Modified validation to accept both UUID and numeric IDs
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(chatIdStr)) {
+      const numericRegex = /^\d+$/;
+      
+      if (!uuidRegex.test(chatIdStr) && !numericRegex.test(chatIdStr)) {
         throw new Error(`Invalid chat ID format: ${chatIdStr}`);
       }
 
@@ -179,30 +182,85 @@ export function useChat() {
         throw new Error(`Invalid user ID format: ${userId}`);
       }
 
-      const { data, error } = await supabase.from('messages').insert([
-        {
-          chat_id: chatIdStr,
-          sender_id: userId,
-          content: content.trim(),
-        },
-      ]);
+      const messageData = {
+        chat_id: chatIdStr,
+        sender_id: userId,
+        content: content.trim(),
+      };
+
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([messageData])
+        .select('*, sender:users!messages_sender_id_fkey(id, name, avatar_url)')
+        .single();
 
       if (error) {
         console.error('Supabase Insert Error:', error);
         throw error;
       }
 
+      if (!data) {
+        throw new Error('No data returned from message insert');
+      }
+
       console.log('Message sent:', data);
-      setMessages(prev => [...prev, data[0]]);
+      setMessages(prev => [...prev, data]);
 
       // Update chat's last message timestamp
-      await supabase.from('chats').update({ updated_at: new Date() }).eq('id', chatIdStr);
+      await supabase
+        .from('chats')
+        .update({ 
+          updated_at: new Date().toISOString(),
+          last_message: content.trim()
+        })
+        .eq('id', chatIdStr);
+
+      return data;
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to send message');
-      toast.showError('Failed to send message');
+      throw err;
     }
-  }, [currentUser?.id, toast]);
+  }, [currentUser?.id]);
+
+  const sendEventMessage = useCallback(async (eventId: string, content: string) => {
+    if (!currentUser?.id || !content?.trim()) {
+      throw new Error('Message content is required.');
+    }
+
+    try {
+      setError(null);
+      const userId = privyDIDtoUUID(currentUser.id);
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(eventId)) {
+        throw new Error(`Invalid event ID format: ${eventId}`);
+      }
+
+      const messageData = {
+        sender_id: userId,
+        event_id: eventId,
+        content: content.trim(),
+        type: 'event_message'
+      };
+
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([messageData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      console.log('Event message sent:', data);
+      return data;
+    } catch (err) {
+      console.error('Error sending event message:', err);
+      setError('Failed to send message');
+      throw err;
+    }
+  }, [currentUser?.id]);
 
   useEffect(() => {
     fetchChats();
@@ -213,8 +271,9 @@ export function useChat() {
     messages,
     loading,
     error,
+    sendMessage,      // for regular chats (UUID)
+    sendEventMessage, // for event chats (numeric)
     fetchChats,
-    fetchMessages,
-    sendMessage,
+    fetchMessages
   };
 }

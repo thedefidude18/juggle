@@ -5,7 +5,7 @@ import { useToast } from '../contexts/ToastContext';
 import { privyDIDtoUUID } from '../utils/auth';
 
 export interface Event {
-  id: string;
+  id: string; // This should be a UUID string
   title: string;
   description: string;
   category: string;
@@ -137,18 +137,11 @@ export function useEvent() {
     try {
       setLoading(true);
 
-      // Check connection first
-      const isConnected = await checkConnection();
-      if (!isConnected) {
-        throw new Error('No connection to server');
-      }
-
       // Convert Privy DID to UUID
       const userId = privyDIDtoUUID(currentUser.id);
 
       const event = await withRetry(async () => {
-        // Create event
-        const { data: event, error: eventError } = await supabase
+        const { data, error } = await supabase
           .from('events')
           .insert({
             creator_id: userId,
@@ -167,32 +160,18 @@ export function useEvent() {
           .select()
           .single();
 
-        if (eventError) throw eventError;
-
-        // Create event pool
-        const { error: poolError } = await supabase
-          .from('event_pools')
-          .insert({
-            event_id: event.id,
-            total_amount: 0,
-            admin_fee: 0
-          });
-
-        if (poolError) throw poolError;
-        return event;
+        if (error) throw error;
+        return data;
       });
 
-      toast.showSuccess('Event created successfully');
-      await fetchEvents();
       return event;
     } catch (error) {
       console.error('Error creating event:', error);
-      toast.showError('Failed to create event. Please check your connection and try again.');
-      return null;
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, [currentUser, toast, fetchEvents]);
+  }, [currentUser, toast]);
 
   const joinEvent = useCallback(async (eventId: string, prediction: boolean) => {
     if (!currentUser) {
