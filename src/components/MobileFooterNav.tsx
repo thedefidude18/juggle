@@ -1,5 +1,4 @@
 import React from 'react';
-import { Trophy, Gamepad2, Plus, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEvent } from '../hooks/useEvent';
 
@@ -7,14 +6,14 @@ const MobileFooterNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-  const { events } = useEvent();
-
-  // Calculate active events count
-  const activeEvents = events.filter(
+  const eventData = useEvent();
+  
+  // Safely calculate active events count
+  const activeEvents = eventData?.events ? eventData.events.filter(
     (event) =>
       new Date(event.start_time) <= new Date() &&
       new Date(event.end_time) >= new Date()
-  ).length;
+  ).length : 0;
 
   // Calculate active games count (this would need to be connected to your games data)
   const activeGames = 13; // Replace with actual games count from your data
@@ -44,7 +43,7 @@ const MobileFooterNav: React.FC = () => {
     {
       id: 'myevents',
       path: '/myevents',
-      icon: <img src="https:/src/myevents-icon.png" alt="Events Icon" className="w-6 h-6" />,
+      icon: <img src="/src/myevents-icon.png" alt="Events Icon" className="w-6 h-6" />,
       label: 'My Events',
     },
     {

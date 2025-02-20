@@ -1,97 +1,91 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { privyDIDtoUUID } from '../utils/auth';
-
-interface Wallet {
-  id: string;
-  user_id: string;
-  balance: number;
-  currency: string;
-  created_at: string;
-  updated_at: string;
-}
+import { useAuth } from '../contexts/AuthContext';
 
 export function useWallet() {
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const { currentUser } = useAuth();
   const toast = useToast();
 
+  const getBalance = useCallback(async () => {
+    if (!currentUser?.id) return 0;
+
+    try {
+      const { data, error } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (error) throw error;
+      return data?.balance || 0;
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+      return 0;
+    }
+  }, [currentUser?.id]);
+
+  const deductBalance = useCallback(async (amount: number) => {
+    if (!currentUser?.id) return false;
+    
+    try {
+      setIsLoading(true);
+      
+      // First, check current balance
+      const { data: wallet, error: balanceError } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (balanceError) throw balanceError;
+      
+      if (!wallet || wallet.balance < amount) {
+        toast.showError('Insufficient balance');
+        return false;
+      }
+
+      // Update balance
+      const { error: updateError } = await supabase
+        .from('wallets')
+        .update({ 
+          balance: wallet.balance - amount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', currentUser.id);
+
+      if (updateError) throw updateError;
+
+      return true;
+    } catch (error) {
+      console.error('Error deducting balance:', error);
+      toast.showError('Failed to process transaction');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentUser?.id, toast]);
+
   const initializeWallet = useCallback(async () => {
     if (!currentUser?.id) return null;
-
+    
     try {
-      const userId = privyDIDtoUUID(currentUser.id);
+      const { data, error } = await supabase
+        .rpc('initialize_user_wallet', { user_id: currentUser.id });
       
-      const { data: existingWallet, error: fetchError } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        toast.showError('Failed to fetch wallet');
-        throw new Error('Failed to fetch wallet');
-      }
-
-      if (existingWallet) {
-        return existingWallet;
-      }
-
-      const { data: newWallet, error: createError } = await supabase
-        .from('wallets')
-        .insert([
-          {
-            user_id: userId,
-            balance: 0,
-            currency: 'NGN'
-          }
-        ])
-        .select()
-        .single();
-
-      if (createError) {
-        toast.showError('Failed to create wallet');
-        throw new Error('Failed to create wallet');
-      }
-
-      toast.showSuccess('Wallet created successfully');
-      return newWallet;
+      if (error) throw error;
+      return data;
     } catch (error) {
-      console.error('Wallet initialization error:', error);
+      console.error('Error initializing wallet:', error);
       return null;
     }
-  }, [currentUser, toast]);
-
-  const fetchWallet = useCallback(async () => {
-    try {
-      setLoading(true);
-      const walletData = await initializeWallet();
-      
-      if (walletData) {
-        setWallet(walletData);
-      } else {
-        toast.showError('Unable to load wallet');
-      }
-    } catch (error) {
-      console.error('Error fetching wallet:', error);
-      toast.showError('Failed to load wallet');
-    } finally {
-      setLoading(false);
-    }
-  }, [initializeWallet, toast]);
-
-  useEffect(() => {
-    if (currentUser?.id) {
-      fetchWallet();
-    }
-  }, [currentUser, fetchWallet]);
+  }, [currentUser?.id]);
 
   return {
-    wallet,
-    loading,
-    fetchWallet
+    getBalance,
+    deductBalance,
+    initializeWallet,
+    isLoading
   };
 }

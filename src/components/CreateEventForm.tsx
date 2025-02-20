@@ -4,8 +4,7 @@ import { useEvent } from '../hooks/useEvent';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import LoadingOverlay from './LoadingOverlay';
-import { supabase } from '../lib/supabase'; // If using absolute paths
-
+import { supabase } from '../lib/supabase';
 
 interface CreateEventFormProps {
   onClose: () => void;
@@ -30,7 +29,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [rules, setRules] = useState('');
 
-  const { createEvent, categoryStats } = useEvent();
+  const { createEvent } = useEvent();
   const toast = useToast();
 
   const categories = [
@@ -38,38 +37,31 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       id: 'sports',
       label: 'Sports',
       icon: '⚽️',
-      events: categoryStats.find((s) => s.category === 'Sports')?.count || 0,
     },
     {
       id: 'music',
       label: 'Music',
       icon: '🎵',
-      events: categoryStats.find((s) => s.category === 'Music')?.count || 0,
     },
     {
       id: 'gaming',
       label: 'Gaming',
       icon: '🎮',
-      events: categoryStats.find((s) => s.category === 'Gaming')?.count || 0,
     },
     {
       id: 'politics',
       label: 'Politics',
       icon: '🗳️',
-      events: categoryStats.find((s) => s.category === 'Politics')?.count || 0,
     },
     {
       id: 'entertainment',
       label: 'Entertainment',
       icon: '🎬',
-      events:
-        categoryStats.find((s) => s.category === 'Entertainment')?.count || 0,
     },
     {
       id: 'other',
       label: 'Other',
       icon: '📌',
-      events: categoryStats.find((s) => s.category === 'Other')?.count || 0,
     },
   ];
 
@@ -78,12 +70,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     if (!file) return;
 
     // Check file type
-    const validTypes = [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'video/quicktime',
-    ];
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/quicktime'];
     if (!validTypes.includes(file.type)) {
       toast.showError('Please upload a JPG, PNG, GIF, or MOV file');
       return;
@@ -96,8 +83,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     }
 
     setBannerFile(file);
+    createPreview(file);
+  };
 
-    // Create preview URL
+  const createPreview = (file: File) => {
     if (file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -155,9 +144,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           .from('event-banners')
           .upload(`${Date.now()}-${bannerFile.name}`, bannerFile, {
             onUploadProgress: (progress) => {
-              setUploadProgress(
-                Math.round((progress.loaded / progress.total) * 100)
-              );
+              setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
             },
           });
 
@@ -178,6 +165,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         rules: rules.trim(),
       });
 
+      toast.showSuccess('Event created successfully');
       onClose();
     } catch (error) {
       console.error('Error creating event:', error);
@@ -195,245 +183,168 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         .slice(0, 16)
     : '';
 
+  const testEventData = {
+    title: "Test Event",
+    description: "This is a test event",
+    category: "Sports",
+    startTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // 1 hour from now
+    endTime: new Date(Date.now() + 7200000).toISOString().slice(0, 16),   // 2 hours from now
+    wagerAmount: "100",
+    maxParticipants: "2",
+    rules: "1. Test rule\n2. Another test rule",
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {loading && (
-        <LoadingOverlay
-          message={
-            uploadProgress > 0
-              ? `Uploading banner... ${uploadProgress}%`
-              : 'Creating event...'
-          }
-        />
-      )}
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+      {loading && <LoadingOverlay />}
 
-      {/* Title */}
-      <div>
-        <label className="block text-sm font-medium text-gray-400 mb-2">
-          Event Title
-        </label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-          placeholder="Enter event title"
-          required
-          disabled={loading}
-        />
-      </div>
+      {/* Form fields */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full p-2 border rounded-lg"
+            required
+          />
+        </div>
 
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-gray-400 mb-2">
-          Description
-        </label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-          placeholder="Describe your event"
-          rows={4}
-          required
-          disabled={loading}
-        />
-      </div>
-
-      {/* Categories */}
-      <div>
-        <label className="block text-sm font-medium text-gray-400 mb-2">
-          Category
-        </label>
-        <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <div className="flex gap-3 min-w-max pb-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Category</label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full p-2 border rounded-lg"
+          >
             {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.label)}
-                className={`p-4 rounded-xl flex flex-col items-center min-w-[120px] ${
-                  category === cat.label
-                    ? 'bg-[#CCFF00] text-black'
-                    : 'bg-[#242538] text-white hover:bg-[#2f3049]'
-                }`}
-                disabled={loading}
-              >
-                <span className="text-2xl mb-1">{cat.icon}</span>
-                <span className="font-medium">{cat.label}</span>
-                <span className="text-xs opacity-70">{cat.events} Events</span>
-              </button>
+              <option key={cat.id} value={cat.label}>
+                {cat.icon} {cat.label}
+              </option>
             ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-2 border rounded-lg"
+            rows={4}
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Start Time</label>
+            <input
+              type="datetime-local"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="w-full p-2 border rounded-lg"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">End Time</label>
+            <input
+              type="datetime-local"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              min={minEndTime}
+              className="w-full p-2 border rounded-lg"
+              required
+            />
           </div>
         </div>
-      </div>
 
-      {/* Date and Time */}
-      <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Wager Amount (₦)</label>
+            <input
+              type="number"
+              value={wagerAmount}
+              onChange={(e) => setWagerAmount(e.target.value)}
+              min="100"
+              className="w-full p-2 border rounded-lg"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Max Participants</label>
+            <input
+              type="number"
+              value={maxParticipants}
+              onChange={(e) => setMaxParticipants(e.target.value)}
+              min="2"
+              className="w-full p-2 border rounded-lg"
+              required
+            />
+          </div>
+        </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Start Time
-          </label>
-          <input
-            type="datetime-local"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-            min={new Date().toISOString().slice(0, 16)}
+          <label className="block text-sm font-medium mb-1">Rules</label>
+          <textarea
+            value={rules}
+            onChange={(e) => setRules(e.target.value)}
+            className="w-full p-2 border rounded-lg"
+            rows={4}
             required
-            disabled={loading}
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            End Time
-          </label>
-          <input
-            type="datetime-local"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-            min={minEndTime}
-            required
-            disabled={loading || !startTime}
-          />
-        </div>
-      </div>
 
-      {/* Participants and Fee */}
-      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Number of Participants
-          </label>
+          <label className="block text-sm font-medium mb-1">Banner Image</label>
           <input
-            type="number"
-            value={maxParticipants}
-            onChange={(e) => setMaxParticipants(e.target.value)}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-            min="2"
-            required
-            disabled={loading}
+            type="file"
+            onChange={handleFileChange}
+            accept="image/jpeg,image/png,image/gif,video/quicktime"
+            className="w-full p-2 border rounded-lg"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Wager Amount (₦)
-          </label>
-          <input
-            type="number"
-            value={wagerAmount}
-            onChange={(e) => setWagerAmount(e.target.value)}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-            placeholder="Enter amount"
-            required
-            min="100"
-            disabled={loading}
-          />
-        </div>
-      </div>
-
-      {/* Event Rules */}
-      <div>
-        <label className="block text-sm font-medium text-gray-400 mb-2">
-          Event Rules
-        </label>
-        <textarea
-          value={rules}
-          onChange={(e) => setRules(e.target.value)}
-          className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-          placeholder="Set the rules and guidelines for your event"
-          rows={4}
-          disabled={loading}
-        />
-        <p className="mt-1 text-sm text-white/60">
-          Clearly define how winners will be determined and any specific rules
-          participants should follow.
-        </p>
-      </div>
-
-      {/* Banner Upload */}
-      <div className="border-2 border-dashed border-[#242538] rounded-xl p-4">
-        <input
-          type="file"
-          accept=".jpg,.jpeg,.png,.gif,.mov"
-          onChange={handleFileChange}
-          className="hidden"
-          id="banner"
-          disabled={loading}
-        />
-        <label
-          htmlFor="banner"
-          className="flex flex-col items-center justify-center cursor-pointer"
-        >
-          {previewUrl ? (
-            <div className="relative">
-              {bannerFile?.type.startsWith('image/') ? (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-32 object-cover rounded-lg"
-                />
-              ) : (
-                <div className="w-full h-32 bg-black rounded-lg flex items-center justify-center">
-                  <video
-                    src={URL.createObjectURL(bannerFile!)}
-                    className="max-h-full"
-                    controls
-                  />
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setBannerFile(null);
-                  setPreviewUrl('');
-                }}
-                className="absolute top-2 right-2 p-1 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Upload className="w-5 h-5 text-[#CCFF00]" />
-              <span className="text-white/60">
-                Upload banner (JPG, PNG, GIF, MOV - max 2MB)
-              </span>
-            </div>
+          {previewUrl && (
+            <img src={previewUrl} alt="Preview" className="mt-2 max-h-40 rounded" />
           )}
-        </label>
-      </div>
+        </div>
 
-      {/* Terms and Submit */}
-      <div className="space-y-4">
-        <label className="flex items-center gap-2 cursor-pointer">
+        <div className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={acceptedTerms}
             onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="w-5 h-5 rounded border-gray-300 text-[#CCFF00] focus:ring-[#CCFF00]"
-            disabled={loading}
+            className="w-4 h-4"
+            required
           />
-          <span className="text-sm text-white/60">
-            I accept the terms and conditions
-          </span>
-        </label>
+          <label className="text-sm">I accept the terms and conditions</label>
+        </div>
 
-        <button
-          type="submit"
-          disabled={loading || !acceptedTerms}
-          className="w-full py-4 bg-[#CCFF00] text-black rounded-xl font-medium hover:bg-[#b3ff00] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {loading ? (
-            <>
-              <LoadingSpinner size="sm" color="#000000" />
-              <span>Creating Event...</span>
-            </>
-          ) : (
-            'Create Event'
-          )}
-        </button>
+        <div className="flex gap-4 mt-8">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-4 bg-gray-200 text-gray-800 rounded-xl font-medium hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+          
+          <button
+            type="submit"
+            disabled={loading || !acceptedTerms}
+            className="flex-1 py-4 bg-[#CCFF00] text-black rounded-xl font-medium hover:bg-[#b3ff00] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <LoadingSpinner size="sm" color="#000000" />
+                <span>Creating Event...</span>
+              </>
+            ) : (
+              'Create Event'
+            )}
+          </button>
+        </div>
       </div>
     </form>
   );

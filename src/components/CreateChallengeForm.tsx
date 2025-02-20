@@ -1,26 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Trophy, Clock, Users, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useWallet } from '../hooks/useWallet';
 import { useChat } from '../hooks/useChat';
 import { useToast } from '../contexts/ToastContext';
+import { supabase } from '../lib/supabase';
 import LoadingSpinner from './LoadingSpinner';
 import LoadingOverlay from './LoadingOverlay';
 import SocialChallengeSuccess from './SocialChallengeSuccess';
-
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  avatar_url: string;
-  stats?: {
-    wins: number;
-    total_matches: number;
-  };
-}
-
-interface CreateChallengeFormProps {
-  onClose: () => void;
-}
 
 interface SocialPlatform {
   id: 'twitter' | 'telegram';
@@ -29,10 +16,26 @@ interface SocialPlatform {
   prefix: string;
 }
 
-interface SocialChallengeState {
-  platform: string;
+interface ChallengeData {
+  title: string;
+  wagerAmount: number;
+  gameType: 'FIFA' | 'NBA2K' | 'OTHER';
+  platform: 'PS5' | 'XBOX' | 'PC';
+  expiresIn: string; // in minutes
+  rules: string;
+  evidence: 'SCREENSHOT' | 'VIDEO' | 'BOTH';
+  category: string; // Add this if needed
+}
+
+interface User {
+  id: string;
+  name: string;
   username: string;
-  link: string;
+  avatar_url?: string;
+  stats?: {
+    wins: number;
+    total_matches: number;
+  };
 }
 
 const SOCIAL_PLATFORMS: SocialPlatform[] = [
@@ -50,14 +53,34 @@ const SOCIAL_PLATFORMS: SocialPlatform[] = [
   }
 ];
 
-const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) => {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+interface CreateChallengeFormProps {
+  onClose: () => void;
+}
+
+interface SuccessChallenge {
+  platform: string;
+  username: string;
+  link: string;
+}
+
+const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({
+  onClose,
+}) => {
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState('');
-  const [wagerAmount, setWagerAmount] = useState('');
-  const [expiresIn, setExpiresIn] = useState('30'); // minutes
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [challengeData, setChallengeData] = useState<ChallengeData>({
+    title: '',
+    description: '',
+    wagerAmount: 100,
+    gameType: 'FIFA',
+    platform: 'PS5',
+    expiresIn: '30',
+    rules: '',
+    evidence: 'SCREENSHOT',
+    category: 'Sports'
+  });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [socialUsernames, setSocialUsernames] = useState<Record<string, string>>({
     twitter: '',
@@ -67,9 +90,10 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
     twitter: '',
     telegram: ''
   });
-  const [successChallenge, setSuccessChallenge] = useState<SocialChallengeState | null>(null);
+  const [successChallenge, setSuccessChallenge] = useState<SuccessChallenge | null>(null);
+
   const { currentUser } = useAuth();
-  const { createChat, sendMessage } = useChat();
+  const { wallet } = useWallet();
   const toast = useToast();
 
   useEffect(() => {
@@ -79,16 +103,16 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
 
     Object.entries(socialUsernames).forEach(([platform, username]) => {
       if (username) {
-        const challengeData = {
-          title,
-          amount: parseInt(wagerAmount) || 0,
+        const linkData = {
+          title: challengeData.title,
+          amount: challengeData.wagerAmount,
           challenger: currentUser?.username,
           platform
         };
         
         const queryParams = new URLSearchParams({
-          ref: username,
-          data: btoa(JSON.stringify(challengeData))
+          ref: typeof username === 'string' ? username : '',
+          data: btoa(JSON.stringify(linkData))
         });
 
         updatedLinks[platform] = `${baseUrl}/challenge?${queryParams.toString()}`;
@@ -98,7 +122,7 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
     });
 
     setChallengeLinks(updatedLinks);
-  }, [socialUsernames, title, wagerAmount, currentUser?.username]);
+  }, [socialUsernames, challengeData.title, challengeData.wagerAmount, currentUser?.username]);
 
   useEffect(() => {
     // Fetch users based on search query
@@ -128,65 +152,50 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const amount = parseInt(wagerAmount);
-    if (!amount || amount < 100) {
-      toast.showError('Minimum bet amount is ₦100');
-      return;
-    }
-
-    if (!acceptedTerms) {
-      toast.showError('Please accept the terms and conditions');
-      return;
-    }
-
+    
     try {
       setLoading(true);
 
-      // Create chat if there's a selected user
-      if (selectedUser) {
-        const chat = await createChat([selectedUser.id], false);
-        if (!chat) throw new Error('Failed to create chat');
+      if (!wallet || wallet.balance < challengeData.wagerAmount) {
+        toast.showError('Insufficient balance');
+        return;
+      }
 
-        // Send challenge message
-        await sendMessage(chat.id, JSON.stringify({
-          type: 'challenge',
-          amount: amount,
-          status: 'pending',
-          expires_at: new Date(Date.now() + parseInt(expiresIn) * 60 * 1000).toISOString()
-        }));
+      const { error } = await supabase
+        .from('challenges')
+        .insert({
+          challenger_id: currentUser?.id,
+          amount: challengeData.wagerAmount,
+          title: challengeData.title,
+          game_type: challengeData.gameType,
+          platform: challengeData.platform,
+          expires_at: new Date(Date.now() + parseInt(challengeData.expiresIn) * 60 * 1000),
+          rules: challengeData.rules,
+          required_evidence: challengeData.evidence
+        });
 
-        toast.showSuccess('Challenge sent successfully');
+      if (error) throw error;
+
+      // Handle social challenge success
+      const [[, socialUsername], [platform]] = Object.entries(socialUsernames)
+        .filter(([, username]) => username)
+        .slice(0, 1)
+        .map(([platform, username]) => [platform, username]);
+      
+      if (socialUsername && platform) {
+        setSuccessChallenge({
+          platform,
+          username: socialUsername,
+          link: challengeLinks[platform]
+        });
+      } else {
+        toast.showSuccess('Challenge created successfully');
         onClose();
       }
 
-      // Send social platform challenges
-      for (const [platform, username] of Object.entries(socialUsernames)) {
-        if (username) {
-          // Create notification or record for social platform challenge
-          await supabase.from('social_challenges').insert({
-            platform,
-            username,
-            title,
-            amount,
-            challenger_id: currentUser?.id,
-            expires_at: new Date(Date.now() + parseInt(expiresIn) * 60 * 1000).toISOString()
-          });
-
-          // Show success modal for the first social platform challenge
-          if (!selectedUser) {
-            setSuccessChallenge({
-              platform,
-              username,
-              link: challengeLinks[platform]
-            });
-            return; // Exit after showing first success
-          }
-        }
-      }
     } catch (error) {
-      console.error('Error sending challenge:', error);
-      toast.showError('Failed to send challenge');
+      toast.showError('Failed to create challenge');
+      console.error('Error creating challenge:', error);
     } finally {
       setLoading(false);
     }
@@ -199,6 +208,7 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
         await navigator.clipboard.writeText(link);
         toast.showSuccess(`${platform} challenge link copied!`);
       } catch (error) {
+        console.error('Failed to copy link:', error);
         toast.showError('Failed to copy link');
       }
     }
@@ -218,8 +228,8 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
           </label>
           <input
             type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            value={challengeData.title}
+            onChange={(e) => setChallengeData({...challengeData, title: e.target.value})}
             className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
             placeholder="e.g., FIFA 24 Match"
             required
@@ -286,7 +296,7 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
           <div className="bg-[#242538] rounded-xl p-4">
             <div className="flex items-center gap-4">
               <img
-                src={selectedUser.avatar_url}
+                src={selectedUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.id}`}
                 alt={selectedUser.name}
                 className="w-12 h-12 rounded-full"
               />
@@ -298,6 +308,7 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
                 type="button"
                 onClick={() => setSelectedUser(null)}
                 className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                aria-label="Remove selected user"
               >
                 <X className="w-5 h-5 text-white/60" />
               </button>
@@ -350,31 +361,35 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
           ))}
         </div>
 
-        {/* Wager Amount */}
-        <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Wager Amount (₦)
-          </label>
-          <input
-            type="number"
-            value={wagerAmount}
-            onChange={(e) => setWagerAmount(e.target.value)}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-            placeholder="Enter amount"
-            min="100"
-            required
-            disabled={loading}
-          />
-        </div>
+        
+   {/* Wager Amount */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">Wager Amount (₦)</label>
+        <input
+          type="number"
+          id="wagerAmount"
+          aria-label="Wager amount in Naira"
+          placeholder="Enter wager amount"
+          min="100"
+          value={challengeData.wagerAmount}
+          onChange={(e) => setChallengeData({...challengeData, wagerAmount: parseInt(e.target.value)})}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#CCFF00] focus:ring-[#CCFF00]"
+          required
+        />
+        <p className="mt-1 text-sm text-gray-500">Minimum bet: ₦100</p>
+      </div>
 
         {/* Expires In */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
+          <label htmlFor="expiresIn" className="block text-sm font-medium text-gray-400 mb-2">
             Expires In (minutes)
           </label>
           <select
-            value={expiresIn}
-            onChange={(e) => setExpiresIn(e.target.value)}
+            id="expiresIn"
+            name="expiresIn"
+            aria-label="Challenge expiration time"
+            value={challengeData.expiresIn}
+            onChange={(e) => setChallengeData({...challengeData, expiresIn: e.target.value})}
             className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
             disabled={loading}
           >
@@ -422,8 +437,8 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
         <SocialChallengeSuccess
           platform={successChallenge.platform}
           username={successChallenge.username}
-          amount={parseInt(wagerAmount)}
-          title={title}
+          amount={challengeData.wagerAmount}
+          title={challengeData.title}
           link={successChallenge.link}
           onClose={() => {
             setSuccessChallenge(null);
@@ -436,3 +451,4 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({ onClose }) =>
 };
 
 export default CreateChallengeForm;
+
