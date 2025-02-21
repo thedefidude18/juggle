@@ -1,51 +1,118 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useChat } from '../hooks/useChat';
+import { supabase } from '../lib/supabase';
 import { ArrowLeft, Users, Trophy, Clock, TrendingUp, TrendingDown, Send } from 'lucide-react';
 import { format } from 'date-fns';
-import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { useChat } from '../hooks/useChat';
 import UserAvatar from './UserAvatar';
 
 interface EventChatProps {
   event: {
     id: string;
     title: string;
-    image_url?: string;
-    end_time: string;
-    participants?: any[];
-    pool?: {
-      total_amount: number;
-    };
+    is_private: boolean;
+    creator_id: string;
     creator: {
       id: string;
       name: string;
       username: string;
-      avatar_url?: string;
+      avatar_url: string;
     };
+    participants?: any[];
+    end_time: string;
+    pool?: {
+      total_amount: number;
+    };
+    yesVotes?: number;
+    noVotes?: number;
   };
-  onBack?: () => void;
 }
 
-const EventChat: React.FC<EventChatProps> = ({ event, onBack }) => {
+const EventChat: React.FC<EventChatProps> = ({ event }) => {
   const { currentUser } = useAuth();
-  const toast = useToast();
-  const { messages, loading, error, sendMessage } = useChat();
+  const { messages, sendMessage } = useChat(event.id);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const toast = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
+    const checkAccess = async () => {
+      if (!currentUser) {
+        setHasAccess(false);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        if (!event.is_private) {
+          setHasAccess(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('event_participants')
+          .select('*')
+          .eq('event_id', event.id)
+          .eq('user_id', currentUser.id)
+          .single();
+
+        if (error) throw error;
+        
+        setHasAccess(!!data || event.creator_id === currentUser.id);
+      } catch (error) {
+        console.error('Error checking access:', error);
+        setHasAccess(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAccess();
+  }, [event.id, event.is_private, event.creator_id, currentUser]);
+
+  useEffect(() => {
+    // Scroll to bottom when new messages arrive
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full bg-[#1a1b2e]">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#CCFF00]"></div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="p-4 text-center bg-[#1a1b2e] text-white h-full">
+        <p className="text-gray-400">
+          {event.is_private 
+            ? "You need to be accepted to the event to participate in the chat"
+            : "Join the event to participate in the chat"}
+        </p>
+      </div>
+    );
+  }
 
   const handleSend = async () => {
     if (!message.trim()) return;
     
     try {
+      setLoading(true);
       await sendMessage(event.id, message.trim());
       setMessage('');
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
       toast.showError('Failed to send message');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -72,20 +139,7 @@ const EventChat: React.FC<EventChatProps> = ({ event, onBack }) => {
               onClick={() => window.history.back()}
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
+              <ArrowLeft className="h-6 w-6 text-white" />
             </button>
 
             {/* Creator Avatar */}
@@ -199,7 +253,7 @@ const EventChat: React.FC<EventChatProps> = ({ event, onBack }) => {
                   </div>
                 </div>
               </div>
-            )
+            );
           })
         )}
         <div ref={messagesEndRef} />
@@ -218,7 +272,7 @@ const EventChat: React.FC<EventChatProps> = ({ event, onBack }) => {
           />
           <button 
             onClick={handleSend}
-            disabled={!message.trim()}
+            disabled={!message.trim() || loading}
             className="p-2 bg-[#CCFF00] text-black rounded-lg hover:bg-[#b3ff00] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send size={20} />
