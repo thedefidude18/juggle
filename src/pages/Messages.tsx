@@ -4,7 +4,7 @@ import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
 import NewChatModal from '../components/NewChatModal';
 import MobileFooterNav from '../components/MobileFooterNav';
-import { Chat, useChat } from '../hooks/useChat';
+import { useChat } from '../hooks/useChat';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useNotification } from '../hooks/useNotification';
 import { useNavigate } from 'react-router-dom';
@@ -74,7 +74,7 @@ const Messages: React.FC = () => {
       </header>
 
       <div className="lg:grid lg:grid-cols-[350px,1fr] h-[calc(100vh-72px)] lg:h-[calc(100vh-64px)]">
-        {/* Chat List - Always visible on desktop, visible on mobile when no chat is selected */}
+        {/* Chat List */}
         <div className={`bg-light-card dark:bg-dark-card ${showMobileChat ? 'hidden lg:block' : ''}`}>
           <ChatList
             onChatSelect={handleChatSelect}
@@ -82,7 +82,7 @@ const Messages: React.FC = () => {
           />
         </div>
 
-        {/* Chat Window - Always visible on desktop, visible on mobile when chat is selected */}
+        {/* Chat Window */}
         <div className={`bg-light-bg dark:bg-dark-bg ${!showMobileChat ? 'hidden lg:block' : ''}`}>
           {selectedChat ? (
             <ChatWindow 
@@ -99,10 +99,17 @@ const Messages: React.FC = () => {
 
       {/* New Chat Modal */}
       {showNewChat && (
-        <NewChatModal onClose={() => setShowNewChat(false)} />
+        <NewChatModal
+          onClose={() => setShowNewChat(false)}
+          onChatCreated={(chat) => {
+            setSelectedChat(chat);
+            setShowMobileChat(true);
+            setShowNewChat(false);
+          }}
+        />
       )}
 
-      {/* Mobile Footer Navigation */}
+      {/* Mobile Navigation */}
       <MobileFooterNav />
     </div>
   );

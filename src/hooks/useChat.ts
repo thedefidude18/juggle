@@ -2,133 +2,166 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { Message } from '../types/chat';
 
-export function useChat(eventId?: string) {
+export interface Chat {
+  id: string;
+  event_id?: string;
+  chat_id?: string;
+  last_message?: string;
+  last_message_at?: string;
+  participants: {
+    id: string;
+    name: string;
+    username: string;
+    avatar_url?: string;
+  }[];
+}
+
+export function useChat() {
   const { currentUser } = useAuth();
   const toast = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchMessages = useCallback(async () => {
-    if (!eventId) {
-      setLoading(false);
-      return;
-    }
-    
+  const fetchChats = useCallback(async () => {
+    if (!currentUser) return;
+
     try {
       setLoading(true);
-      setError(null);
       
-      const { data, error } = await supabase
-        .from('messages')
+      // Fetch event chats
+      const { data: eventChats, error: eventError } = await supabase
+        .from('event_participants')
         .select(`
-          *,
-          sender:sender_id(
+          event:events (
             id,
-            name,
-            avatar_url,
-            username
+            title,
+            created_at,
+            creator:users!creator_id (
+              id,
+              name,
+              username,
+              avatar_url
+            )
           )
         `)
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: true });
+        .eq('user_id', currentUser.id)
+        .eq('status', 'accepted');
 
-      if (error) throw error;
-      setMessages(data || []);
-    } catch (err) {
-      console.error('Error fetching messages:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch messages');
-      toast.showError('Failed to load messages');
+      if (eventError) throw eventError;
+
+      // Fetch private chats
+      const { data: privateChats, error: privateError } = await supabase
+        .from('private_chat_participants')
+        .select(`
+          chat:private_chats (
+            id,
+            created_at,
+            participants:private_chat_participants (
+              user:users (
+                id,
+                name,
+                username,
+                avatar_url
+              )
+            )
+          )
+        `)
+        .eq('user_id', currentUser.id);
+
+      if (privateError) throw privateError;
+
+      // Combine and format chats
+      const formattedChats: Chat[] = [
+        ...eventChats.map(({ event }) => ({
+          id: event.id,
+          event_id: event.id,
+          participants: [event.creator],
+          created_at: event.created_at,
+        })),
+        ...privateChats.map(({ chat }) => ({
+          id: chat.id,
+          chat_id: chat.id,
+          participants: chat.participants
+            .map(p => p.user)
+            .filter(user => user.id !== currentUser.id),
+          created_at: chat.created_at,
+        }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setChats(formattedChats);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+      toast.showError('Failed to load chats');
     } finally {
       setLoading(false);
     }
-  }, [eventId, toast]);
+  }, [currentUser, toast]);
 
-  // Initial fetch
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+  const createPrivateChat = async (friendId: string) => {
+    if (!currentUser) throw new Error('Not authenticated');
 
-  // Subscribe to new messages
-  useEffect(() => {
-    if (!eventId) return;
+    const { data: existing, error: checkError } = await supabase
+      .from('private_chat_participants')
+      .select('chat_id')
+      .eq('user_id', currentUser.id)
+      .eq('chat_id', supabase.from('private_chat_participants').select('chat_id').eq('user_id', friendId));
 
-    const channel = supabase
-      .channel(`event-messages:${eventId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `event_id=eq.${eventId}`
-      }, payload => {
-        if (payload.new.sender_id !== currentUser?.id) {
-          supabase
-            .from('messages')
-            .select(`
-              *,
-              sender:sender_id(
-                id,
-                name,
-                avatar_url,
-                username
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single()
-            .then(({ data }) => {
-              if (data) {
-                setMessages(prev => [...prev, data]);
-              }
-            });
-        }
-      })
-      .subscribe();
+    if (checkError) throw checkError;
 
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [eventId, currentUser?.id]);
-
-  return {
-    messages,
-    loading,
-    error,
-    sendMessage: async (content: string) => {
-      if (!currentUser || !eventId) {
-        throw new Error('Not authenticated or no event selected');
-      }
-
-      try {
-        const { data: message, error } = await supabase
-          .from('messages')
-          .insert({
-            event_id: eventId,
-            sender_id: currentUser.id,
-            content,
-            type: 'text'
-          })
-          .select(`
-            *,
-            sender:sender_id(
+    // If chat exists, return it
+    if (existing.length > 0) {
+      const { data: chat, error: chatError } = await supabase
+        .from('private_chats')
+        .select(`
+          id,
+          created_at,
+          participants:private_chat_participants (
+            user:users (
               id,
               name,
-              avatar_url,
-              username
+              username,
+              avatar_url
             )
-          `)
-          .single();
+          )
+        `)
+        .eq('id', existing[0].chat_id)
+        .single();
 
-        if (error) throw error;
+      if (chatError) throw chatError;
+      return chat;
+    }
 
-        setMessages(prev => [...prev, message]);
-        return message;
-      } catch (error) {
-        console.error('Error sending message:', error);
-        throw error;
-      }
-    },
-    fetchMessages
+    // Create new chat
+    const { data: chat, error: createError } = await supabase
+      .from('private_chats')
+      .insert({})
+      .select()
+      .single();
+
+    if (createError) throw createError;
+
+    // Add participants
+    const { error: participantsError } = await supabase
+      .from('private_chat_participants')
+      .insert([
+        { chat_id: chat.id, user_id: currentUser.id },
+        { chat_id: chat.id, user_id: friendId }
+      ]);
+
+    if (participantsError) throw participantsError;
+
+    return chat;
+  };
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+  return {
+    chats,
+    loading,
+    fetchChats,
+    createPrivateChat
   };
 }

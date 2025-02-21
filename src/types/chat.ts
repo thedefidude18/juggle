@@ -7,18 +7,17 @@ export interface User {
 
 export interface Message {
   id: string;
-  content: string;
-  created_at: string;
-  updated_at: string;
   event_id: string;
   sender_id: string;
-  sender: {
-    id: string;
-    name: string;
-    avatar_url: string;
-    status: string;
-  };
-  reactions: MessageReaction[];
+  content: string;
+  type: 'text' | 'image' | 'file';
+  file_url?: string;
+  created_at: string;
+  updated_at: string;
+  // Fields from the user profile
+  username: string;
+  name: string;
+  avatar_url?: string;
 }
 
 export interface MessageReaction {
