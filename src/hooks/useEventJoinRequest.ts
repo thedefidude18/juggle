@@ -22,17 +22,25 @@ export function useEventJoinRequest() {
     eventId: string,
     message?: string
   ) => {
-    if (!currentUser) return false;
+    if (!currentUser) {
+      toast.showError('You must be logged in to join events');
+      return false;
+    }
+
     setIsProcessing(true);
 
     try {
       // Check if already requested
-      const { data: existingRequest } = await supabase
+      const { data: existingRequest, error: checkError } = await supabase
         .from('event_join_requests')
         .select('id, status')
         .eq('event_id', eventId)
         .eq('user_id', currentUser.id)
         .single();
+
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+        throw checkError;
+      }
 
       if (existingRequest) {
         if (existingRequest.status === 'pending') {
@@ -46,21 +54,26 @@ export function useEventJoinRequest() {
       }
 
       // Create new request
-      const { error } = await supabase
+      const { data, error: insertError } = await supabase
         .from('event_join_requests')
-        .insert({
+        .insert([{
           event_id: eventId,
           user_id: currentUser.id,
-          message
-        });
+          message: message || null,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast.showSuccess('Join request sent successfully');
       return true;
-    } catch (error) {
+
+    } catch (error: any) {
       console.error('Error requesting to join:', error);
-      toast.showError('Failed to send join request');
+      toast.showError(error.message || 'Failed to send join request');
       return false;
     } finally {
       setIsProcessing(false);
@@ -84,11 +97,12 @@ export function useEventJoinRequest() {
 
       if (error) throw error;
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching pending requests:', error);
+      toast.showError(error.message || 'Failed to fetch pending requests');
       return [];
     }
-  }, []);
+  }, [toast]);
 
   const respondToRequest = useCallback(async (
     requestId: string,
@@ -102,7 +116,7 @@ export function useEventJoinRequest() {
         .from('event_join_requests')
         .update({
           status,
-          response_message: responseMessage,
+          response_message: responseMessage || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', requestId);
@@ -111,9 +125,9 @@ export function useEventJoinRequest() {
 
       toast.showSuccess(`Request ${status} successfully`);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error responding to request:', error);
-      toast.showError('Failed to process request');
+      toast.showError(error.message || 'Failed to process request');
       return false;
     } finally {
       setIsProcessing(false);

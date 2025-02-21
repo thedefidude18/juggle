@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { Lock, Users, Clock, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useEventJoinRequest } from '../hooks/useEventJoinRequest';
 import { Event } from '../types/event';
 import JoinRequestModal from './JoinRequestModal';
+import { toast } from 'react-toastify';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&auto=format&fit=crop';
 
@@ -17,7 +18,7 @@ interface EventCardProps {
 const EventCard: React.FC<EventCardProps> = ({ event, onJoin, onChatClick }) => {
   const { currentUser } = useAuth();
   const { requestToJoin } = useEventJoinRequest();
-  const [joinRequestStatus, setJoinRequestStatus] = useState<string | null>(null);
+  const [joinRequestStatus, setJoinRequestStatus] = useState<'none' | 'pending'>('none');
   const [showJoinModal, setShowJoinModal] = useState(false);
   const navigate = useNavigate();
   
@@ -51,18 +52,21 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin, onChatClick }) => 
 
   const handleJoinClick = async () => {
     if (!currentUser) {
-      navigate('/login');
+      toast.showError('Please login to join events');
       return;
     }
 
     if (event.is_private) {
       setShowJoinModal(true);
     } else {
-      onJoin(true);
+      // Call the onChatClick prop instead of directly navigating
+      onChatClick();
     }
   };
 
   const handleJoinRequest = async (message: string) => {
+    setShowJoinModal(false);
+    
     const success = await requestToJoin(event.id, message);
     if (success) {
       setJoinRequestStatus('pending');

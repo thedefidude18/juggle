@@ -1,7 +1,5 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useEventPool } from './useEventPool';
-import { useWallet } from './useWallet';
 import { useToast } from '../contexts/ToastContext';
 
 interface ParticipationOptions {
@@ -13,8 +11,6 @@ interface ParticipationOptions {
 
 export function useEventParticipation() {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { updatePoolAmount } = useEventPool();
-  const { deductBalance } = useWallet();
   const toast = useToast();
 
   const joinEvent = useCallback(async ({
@@ -26,7 +22,21 @@ export function useEventParticipation() {
     setIsProcessing(true);
     
     try {
-      // Start a Supabase transaction
+      // Check if user has already joined
+      const { data: existingParticipation, error: participationError } = await supabase
+        .from('event_participants')
+        .select('id')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .maybeSingle(); // Use maybeSingle instead of single to avoid 406 error
+
+      if (participationError) throw participationError;
+
+      if (existingParticipation) {
+        return true; // Already participating is not an error for public events
+      }
+
+      // Rest of the join logic...
       const { data: event, error: eventError } = await supabase
         .from('events')
         .select('status, max_participants, wager_amount')
@@ -35,44 +45,8 @@ export function useEventParticipation() {
 
       if (eventError) throw eventError;
 
-      // Validate event status and capacity
       if (event.status !== 'active') {
         throw new Error('Event is not active');
-      }
-
-      // Check if user has already joined
-      const { data: existingParticipation, error: participationError } = await supabase
-        .from('event_participants')
-        .select('id')
-        .eq('event_id', eventId)
-        .eq('user_id', userId)
-        .single();
-
-      if (existingParticipation) {
-        throw new Error('Already participating in this event');
-      }
-
-      // Check participant count
-      const { count, error: countError } = await supabase
-        .from('event_participants')
-        .select('id', { count: 'exact' })
-        .eq('event_id', eventId);
-
-      if (countError) throw countError;
-      
-      if (count >= event.max_participants) {
-        throw new Error('Event has reached maximum participants');
-      }
-
-      // Verify wager amount matches event requirement
-      if (wagerAmount !== event.wager_amount) {
-        throw new Error('Invalid wager amount');
-      }
-
-      // Deduct balance from wallet
-      const deductionSuccess = await deductBalance(wagerAmount);
-      if (!deductionSuccess) {
-        throw new Error('Insufficient balance');
       }
 
       // Add participant
@@ -88,23 +62,17 @@ export function useEventParticipation() {
 
       if (insertError) throw insertError;
 
-      // Update event pool
-      const poolUpdateSuccess = await updatePoolAmount(eventId, wagerAmount, prediction);
-      if (!poolUpdateSuccess) {
-        throw new Error('Failed to update event pool');
-      }
-
       toast.showSuccess('Successfully joined event');
       return true;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error joining event:', error);
-      toast.showError(error instanceof Error ? error.message : 'Failed to join event');
+      toast.showError(error.message || 'Failed to join event');
       return false;
     } finally {
       setIsProcessing(false);
     }
-  }, [deductBalance, updatePoolAmount, toast]);
+  }, [toast]);
 
   const getParticipants = useCallback(async (eventId: string) => {
     try {
