@@ -1,222 +1,132 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, Smile, Paperclip, MoreVertical, User, Bell, Ban, Flag } from 'lucide-react';
-import { useChat, Chat as ChatType } from '../hooks/useChat';
+import React, { useState } from 'react';
+import { ArrowLeft, Paperclip, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
-import ProfileCard from './ProfileCard';
-import ChallengeModal from './ChallengeModal';
 import UserAvatar from './UserAvatar';
+import { Chat } from '../types/chat';
 
 interface ChatWindowProps {
-  chat: ChatType;
+  chat: Chat;
   onBack?: () => void;
 }
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ chat, onBack }) => {
-  const [message, setMessage] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [showChallengeModal, setShowChallengeModal] = useState(false);
-  const [mutedUsers, setMutedUsers] = useState<string[]>([]);
-  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const { messages, loading, error, sendMessage } = useChat();
   const { currentUser } = useAuth();
   const toast = useToast();
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
 
   const handleSend = async () => {
-    if (!message.trim()) return;
-    
-    try {
-      await sendMessage(chat.id, message.trim());
-      setMessage('');
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    } catch (error) {
-      toast.showError('Failed to send message');
-    }
-  };
+    if (!message.trim() || sending) return;
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+    try {
+      setSending(true);
+      // Implement your send message logic here
+      setMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.showError('Failed to send message');
+    } finally {
+      setSending(false);
     }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // TODO: Implement file upload
     toast.showInfo('File upload coming soon!');
   };
 
-  if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-red-500">
-        {error}
-      </div>
-    );
-  }
-
-  const otherParticipants = chat.participants.filter(p => p.user_id !== currentUser?.id);
+  // Get other participant's info
+  const otherParticipant = chat.participants.find(p => p.user_id !== currentUser?.id);
 
   return (
     <div className="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
       {/* Header */}
-      <div className="bg-light-card dark:bg-dark-card p-4 border-b border-light-text/10 dark:border-dark-text/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <button
-                onClick={onBack}
-                className="p-2 hover:bg-light-text/10 dark:hover:bg-dark-text/10 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-light-text dark:text-dark-text" />
-              </button>
-            )}
-            {chat.is_group ? (
-              <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-                <span className="text-[#CCFF00] font-bold">
-                  {chat.group_name?.[0].toUpperCase()}
-                </span>
-              </div>
-            ) : (
-              <UserAvatar
-                src={otherParticipants[0]?.avatar_url}
-                alt={otherParticipants[0]?.name}
-                status={otherParticipants[0]?.status as any}
-                onClick={() => setSelectedUserId(otherParticipants[0]?.user_id)}
-                className="cursor-pointer"
-              />
-            )}
-            <div>
-              <h2 className="text-light-text dark:text-dark-text font-medium">
-                {chat.is_group ? chat.group_name : otherParticipants[0]?.name}
-              </h2>
-              <p className="text-light-text/60 dark:text-dark-text/60 text-sm">
-                {chat.is_group 
-                  ? `${chat.participants.length} members`
-                  : `@${otherParticipants[0]?.username}`}
-              </p>
-            </div>
-          </div>
+      <header className="bg-light-card dark:bg-dark-card p-4 flex items-center gap-3 border-b border-light-border dark:border-dark-border">
+        {onBack && (
           <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 hover:bg-light-text/10 dark:hover:bg-dark-text/10 rounded-lg transition-colors"
+            onClick={onBack}
+            className="lg:hidden p-2 hover:bg-light-hover dark:hover:bg-dark-hover rounded-full"
           >
-            <MoreVertical className="w-5 h-5 text-light-text/60 dark:text-dark-text/60" />
+            <ArrowLeft className="w-6 h-6" />
           </button>
+        )}
+        <UserAvatar
+          src={otherParticipant?.avatar_url}
+          alt={otherParticipant?.name || 'User'}
+          size="md"
+        />
+        <div className="flex-1">
+          <h2 className="font-semibold">{otherParticipant?.name || 'User'}</h2>
+          <p className="text-sm text-light-text/60 dark:text-dark-text/60">
+            {otherParticipant?.status || 'Offline'}
+          </p>
         </div>
-      </div>
+      </header>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => {
-          if (blockedUsers.includes(msg.sender_id)) return null;
-
-          const isSender = msg.sender_id === currentUser?.id;
-
-          return (
+        {chat.messages?.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
+          >
+            {msg.sender_id !== currentUser?.id && (
+              <UserAvatar
+                src={msg.sender?.avatar_url}
+                alt={msg.sender?.name || 'User'}
+                size="sm"
+                className="mr-2"
+              />
+            )}
             <div
-              key={msg.id}
-              className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
+              className={`max-w-[70%] rounded-xl p-3 ${
+                msg.sender_id === currentUser?.id
+                  ? 'bg-primary text-white'
+                  : 'bg-light-card dark:bg-dark-card'
+              }`}
             >
-              {!isSender && (
-                <img
-                  src={msg.sender?.avatar_url}
-                  alt={msg.sender?.name}
-                  className="w-8 h-8 rounded-full mr-2 cursor-pointer"
-                  onClick={() => setSelectedUserId(msg.sender_id)}
-                />
-              )}
-              <div className={`max-w-[70%] rounded-xl p-3 ${
-                isSender 
-                  ? 'bg-[#CCFF00] text-black' 
-                  : 'bg-light-card dark:bg-dark-card text-light-text dark:text-dark-text'
-              }`}>
-                {!isSender && (
-                  <p className="text-sm font-medium mb-1">{msg.sender?.name}</p>
-                )}
-                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                <span className="text-xs opacity-60 mt-1 block">
-                  {new Date(msg.created_at).toLocaleTimeString()}
-                </span>
-              </div>
+              <p className="break-words">{msg.content}</p>
             </div>
-          );
-        })}
-        <div ref={messagesEndRef} />
+          </div>
+        ))}
       </div>
 
-      {/* Message Input */}
-      <div className="p-4 bg-light-card dark:bg-dark-card">
+      {/* Input */}
+      <div className="p-4 bg-light-card dark:bg-dark-card border-t border-light-border dark:border-dark-border">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-2 hover:bg-light-text/10 dark:hover:bg-dark-text/10 rounded-lg transition-colors"
-          >
-            <Smile className="w-5 h-5 text-light-text/60 dark:text-dark-text/60" />
-          </button>
-          <label className="p-2 hover:bg-light-text/10 dark:hover:bg-dark-text/10 rounded-lg transition-colors cursor-pointer">
-            <Paperclip className="w-5 h-5 text-light-text/60 dark:text-dark-text/60" />
+          <label className="p-2 hover:bg-light-hover dark:hover:bg-dark-hover rounded-full cursor-pointer">
+            <Paperclip className="w-6 h-6" />
             <input
               type="file"
-              onChange={handleFileUpload}
               className="hidden"
+              onChange={handleFileUpload}
+              accept="image/*,video/*"
             />
           </label>
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message"
-            className="flex-1 bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text px-4 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
+            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            placeholder="Type a message..."
+            className="flex-1 bg-light-bg dark:bg-dark-bg rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
             onClick={handleSend}
-            disabled={!message.trim()}
-            className="p-2 hover:bg-[#CCFF00]/20 rounded-lg transition-colors disabled:opacity-50"
+            disabled={!message.trim() || sending}
+            className="p-2 bg-primary text-white rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Send className="w-5 h-5 text-[#CCFF00]" />
+            {sending ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <Send className="w-6 h-6" />
+            )}
           </button>
         </div>
       </div>
-
-      {/* Modals */}
-      {selectedUserId && (
-        <ProfileCard
-          userId={selectedUserId}
-          onClose={() => setSelectedUserId(null)}
-        />
-      )}
-
-      {showChallengeModal && selectedUserId && currentUser && (
-        <ChallengeModal
-          challengerId={currentUser.id}
-          challengedId={selectedUserId}
-          onClose={() => {
-            setShowChallengeModal(false);
-            setSelectedUserId(null);
-          }}
-        />
-      )}
     </div>
   );
 };

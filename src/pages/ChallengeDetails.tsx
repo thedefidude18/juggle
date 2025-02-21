@@ -3,41 +3,88 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Clock, Zap } from 'lucide-react';
 import Header from '../components/Header';
 import MobileFooterNav from '../components/MobileFooterNav';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useToast } from '../contexts/ToastContext';
+import { supabase } from '../lib/supabase';
 
 const ChallengeDetails: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [timeLeft, setTimeLeft] = useState('');
+  const toast = useToast();
+  const [loading, setLoading] = useState(true);
+  const [challenge, setChallenge] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - replace with real data from your API
-  const challenge = {
-    id,
-    challenger: {
-      name: 'John Doe',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
-      wins: 28,
-      total_matches: 45
-    },
-    challenged: {
-      name: 'Jane Smith',
-      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jane',
-      wins: 32,
-      total_matches: 50
-    },
-    amount: 5000,
-    type: 'FIFA 24 Match',
-    rules: [
-      'Best of 3 matches',
-      'Default team settings',
-      'No custom formations',
-      'Winner must provide screenshot proof',
-      'Match must be completed within time limit'
-    ],
-    created_at: new Date().toISOString(),
-    expires_at: new Date(Date.now() + 30 * 60000).toISOString(),
-    status: 'active' as const,
-    accepted: false
-  };
+  useEffect(() => {
+    const fetchChallengeDetails = async () => {
+      if (!id) {
+        setError('Invalid challenge ID');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('challenges')
+          .select(`
+            *,
+            challenger:challenger_id(*),
+            challenged:challenged_id(*)
+          `)
+          .eq('id', id)
+          .single();
+
+        if (error) throw error;
+
+        if (!data) {
+          setError('Challenge not found');
+          return;
+        }
+
+        setChallenge(data);
+      } catch (err) {
+        console.error('Error fetching challenge:', err);
+        setError('Failed to load challenge details');
+        toast.showError('Failed to load challenge details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChallengeDetails();
+  }, [id, toast]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#1a1b2e] flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error || !challenge) {
+    return (
+      <div className="min-h-screen bg-[#1a1b2e]">
+        <Header 
+          title="Challenge Details" 
+          icon={<Zap className="w-6 h-6" />}
+          showMenu={false}
+        />
+        <div className="p-4 text-center">
+          <p className="text-white/60">{error || 'Challenge not found'}</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-4 px-4 py-2 bg-[#7C3AED] text-white rounded-lg hover:bg-[#6025EA] transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     if (challenge.status === 'scheduled' || challenge.status === 'active') {

@@ -4,12 +4,15 @@ import { Users, Clock, Trophy, TrendingUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Event } from '../hooks/useEvent';
 
+const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&auto=format&fit=crop';
+
 interface EventCardProps {
   event: Event;
   onJoin: (prediction: boolean) => void;
+  onChatClick: () => void;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, onJoin, onChatClick }) => {
   const { currentUser, login } = useAuth();
   const navigate = useNavigate();
   const isActive = new Date(event.start_time) <= new Date() && new Date(event.end_time) >= new Date();
@@ -43,14 +46,18 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
 
   return (
     <div className="bg-[#242538] rounded-xl overflow-hidden shadow-lg text-white">
-      {/* Banner Section */}
+      {/* Banner Section - removed background color to make it transparent */}
       <div className="relative">
         <img
-          src={event.banner_url || 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&auto=format&fit=crop'}
+          src={event.banner_url || DEFAULT_BANNER}
           alt={event.title}
           className="w-full h-48 object-cover"
+          onError={(e) => {
+            e.currentTarget.src = DEFAULT_BANNER;
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+        {/* Overlay gradient - adjusted opacity for better visibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
         
         {/* Live Badge */}
         {isActive && (
@@ -94,7 +101,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
               <span className="text-white/60">@{event.creator.username}</span>
               <div className="flex items-center gap-1 text-xs text-white/40">
                 <Trophy size={12} />
-                <span>{event.creator.wins || 0} wins</span>
+                <span>{event.creator?.matches_won || 0} wins</span>
               </div>
             </div>
           </div>
@@ -106,29 +113,14 @@ const EventCard: React.FC<EventCardProps> = ({ event, onJoin }) => {
 
         {/* Voting Buttons */}
         <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={() => handleJoin(true)}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium bg-[#CCFF00]/20 text-[#CCFF00] hover:bg-[#CCFF00]/30 transition-colors"
-          >
-            <TrendingUp size={16} />
-            <span>YES ({yesVotes})</span>
-          </button>
-
-          <button
-            onClick={() => handleJoin(false)}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium bg-red-500/20 text-red-500 hover:bg-red-500/30 transition-colors"
-          >
-            <TrendingUp size={16} className="rotate-180" />
-            <span>NO ({noVotes})</span>
-          </button>
         </div>
 
         {/* Action Buttons */}
         <button
-          onClick={() => navigate(`/event/${event.id}`)}
+          onClick={onChatClick}
           className="w-full mt-4 px-4 py-2 bg-[#7C3AED] text-white rounded-xl font-medium hover:bg-[#5B21B6] transition-colors"
         >
-          View Details
+          Join e
         </button>
       </div>
     </div>

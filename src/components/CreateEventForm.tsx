@@ -6,6 +6,8 @@ import LoadingSpinner from './LoadingSpinner';
 import LoadingOverlay from './LoadingOverlay';
 import { supabase } from '../lib/supabase';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 interface CreateEventFormProps {
   onClose: () => void;
   eventType: 'public' | 'private';
@@ -140,16 +142,25 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
       let bannerUrl = '';
       if (bannerFile) {
+        const fileExt = bannerFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
         const { data, error } = await supabase.storage
           .from('event-banners')
-          .upload(`${Date.now()}-${bannerFile.name}`, bannerFile, {
-            onUploadProgress: (progress) => {
-              setUploadProgress(Math.round((progress.loaded / progress.total) * 100));
-            },
+          .upload(fileName, bannerFile, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: bannerFile.type,
           });
 
         if (error) throw error;
-        bannerUrl = data.path;
+
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('event-banners')
+          .getPublicUrl(fileName);
+
+        bannerUrl = publicUrl;
       }
 
       await createEvent({
@@ -160,7 +171,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         end_time: endDate,
         wager_amount: amount,
         max_participants: parseInt(maxParticipants),
-        banner_url: bannerUrl,
+        banner_url: bannerUrl, // Now using the full public URL
         is_private: eventType === 'private',
         rules: rules.trim(),
       });
@@ -172,7 +183,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       toast.showError('Failed to create event. Please try again.');
     } finally {
       setLoading(false);
-      setUploadProgress(0);
     }
   };
 

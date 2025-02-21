@@ -16,7 +16,10 @@ import {
   Crown,
   Gift,
   Star,
-  Zap
+  Zap,
+  PlusCircle,
+  UserPlus,
+  Award
 } from 'lucide-react';
 import { useNotification, NotificationType } from '../hooks/useNotification';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,6 +46,12 @@ const Notifications: React.FC = () => {
 
   const getNotificationIcon = (type: NotificationType) => {
     switch (type) {
+      case 'event_created':
+        return <PlusCircle className="w-5 h-5 text-green-400" />;
+      case 'event_participation':
+        return <UserPlus className="w-5 h-5 text-blue-400" />;
+      case 'event_milestone':
+        return <Award className="w-5 h-5 text-yellow-400" />;
       case 'event_win':
       case 'event_loss':
       case 'new_event':

@@ -10,6 +10,7 @@ SECURITY DEFINER
 AS $$
 DECLARE
   v_is_admin boolean;
+  v_match record;
 BEGIN
   -- Check if user is admin
   SELECT is_admin INTO v_is_admin FROM users WHERE id = p_admin_id;
@@ -25,16 +26,49 @@ BEGIN
   WHERE id = p_event_id
   AND status = 'active';
 
-  -- Update participant statuses
+  -- Process payouts for each matched pair
+  FOR v_match IN 
+    SELECT * FROM bet_matches 
+    WHERE event_id = p_event_id 
+    AND status = 'active'
+  LOOP
+    -- Calculate winner's payout (total stakes minus platform fee)
+    -- Platform fee is 3% of total pot
+    DECLARE
+      v_total_pot := v_match.wager_amount * 2;
+      v_platform_fee := v_total_pot * 0.03;
+      v_winner_payout := v_total_pot - v_platform_fee;
+      v_winner_id uuid;
+    BEGIN
+      -- Determine winner based on admin's decision
+      v_winner_id := CASE 
+        WHEN p_winning_prediction THEN v_match.yes_participant_id
+        ELSE v_match.no_participant_id
+      END;
+
+      -- Update winner's wallet
+      UPDATE wallets w
+      SET balance = balance + v_winner_payout
+      FROM event_participants ep
+      WHERE ep.id = v_winner_id
+      AND w.user_id = ep.user_id;
+
+      -- Update match status
+      UPDATE bet_matches
+      SET 
+        status = 'completed',
+        updated_at = now()
+      WHERE id = v_match.id;
+    END;
+  END LOOP;
+
+  -- Update all participant statuses
   UPDATE event_participants
   SET status = CASE 
     WHEN prediction = p_winning_prediction THEN 'won'
     ELSE 'lost'
   END
   WHERE event_id = p_event_id;
-
-  -- Process payouts
-  PERFORM process_event_payout(p_event_id);
 
   -- Record admin action
   INSERT INTO admin_actions (

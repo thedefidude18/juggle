@@ -15,6 +15,23 @@ import { useWallet } from '../hooks/useWallet';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 
+interface Event {
+  id: string;
+  title: string;
+  end_time: string;
+  participants: string[];
+  pool: {
+    total_amount: number;
+  };
+  creator: {
+    id: string;
+    name: string;
+    avatar_url: string | null;
+  };
+  yesVotes?: number;
+  noVotes?: number;
+}
+
 const categories = [
   { id: 'create', icon: <Users />, label: 'Create Event', primary: true },
   { id: 'all', icon: '🌟', label: 'All Events' },
@@ -28,7 +45,20 @@ const Events: React.FC = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showChat, setShowChat] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState({
+    id: '1',
+    title: 'Sample Event',
+    end_time: new Date(Date.now() + 86400000).toISOString(),
+    participants: [],
+    pool: {
+      total_amount: 100000
+    },
+    creator: {
+      id: 'creator123',
+      name: 'John Doe',
+      avatar_url: null // Will fall back to DiceBear avatar
+    }
+  });
   
   const { currentUser } = useAuth();
   const { wallet } = useWallet();
@@ -86,49 +116,54 @@ const Events: React.FC = () => {
     selectedCategory === 'all' || event.category.toLowerCase() === selectedCategory.toLowerCase()
   );
 
+  const handleChatClick = (event: Event) => {
+    setSelectedEvent(event);
+    setShowChat(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex gap-2 overflow-x-auto pb-4">
-          {categories.map(category => (
-            <CategoryButton
-              key={category.id}
-              icon={category.icon}
-              label={category.label}
-              isSelected={selectedCategory === category.id}
-              onClick={() => handleCategoryClick(category.id)}
-              primary={category.primary}
-            />
-          ))}
-        </div>
-
-        {isLoading ? (
-          <div>Loading events...</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {filteredEvents.map(event => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onJoin={handleJoinEvent}
-                onChatClick={() => {
-                  setSelectedEvent(event);
-                  setShowChat(true);
-                }}
+      <div className="lg:grid lg:grid-cols-[1fr,400px] h-[calc(100vh-64px)]">
+        <main className="container mx-auto px-4 py-8 overflow-y-auto">
+          <div className="flex gap-2 overflow-x-auto pb-4">
+            {categories.map(category => (
+              <CategoryButton
+                key={category.id}
+                icon={category.icon}
+                label={category.label}
+                isSelected={selectedCategory === category.id}
+                onClick={() => handleCategoryClick(category.id)}
+                primary={category.primary}
               />
             ))}
           </div>
-        )}
-      </main>
-      
-      {showChat && selectedEvent && (
-        <EventChat
-          event={selectedEvent}
-          onClose={() => setShowChat(false)}
-        />
-      )}
-      
+
+          {isLoading ? (
+            <div>Loading events...</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mt-4">
+              {filteredEvents.map(event => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onJoin={(prediction) => handleJoinEvent(event.id, prediction)}
+                  onChatClick={() => handleChatClick(event)}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+        
+        <div className={`fixed inset-0 z-50 lg:relative lg:z-0 ${showChat ? 'block' : 'hidden lg:hidden'}`}>
+          {showChat && selectedEvent && (
+            <EventChat
+              event={selectedEvent}
+              onClose={() => setShowChat(false)}
+            />
+          )}
+        </div>
+      </div>
       <MobileFooterNav />
     </div>
   );

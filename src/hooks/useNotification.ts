@@ -11,6 +11,9 @@ export type NotificationType =
   | 'event_loss' 
   | 'new_event' 
   | 'event_update'
+  | 'event_created'        // New type for creators
+  | 'event_participation'  // New type for when users join
+  | 'event_milestone'      // New type for participation milestones
   | 'earnings'
   | 'follow'
   | 'group_message'

@@ -15,6 +15,12 @@ export interface EventHistoryItem {
   opponent_avatar_url?: string;
   group_name?: string;
   group_avatar_url?: string;
+  match_status?: 'matched' | 'waiting' | 'cancelled';
+  matched_with?: {
+    name: string;
+    avatar_url: string;
+    prediction: boolean;
+  };
 }
 
 export function useEventHistory() {
@@ -24,23 +30,42 @@ export function useEventHistory() {
   const toast = useToast();
 
   const fetchHistory = useCallback(async () => {
-    if (!currentUser?.id) {
-      setHistory([]);
-      setLoading(false);
-      return;
-    }
+    if (!currentUser?.id) return;
 
     try {
-      setLoading(true);
-      const { data, error } = await supabase.rpc(
-        'get_user_event_history',
-        { p_user_id: currentUser.id }
-      );
+      const { data, error } = await supabase
+        .from('event_participants')
+        .select(`
+          id,
+          event_id,
+          prediction,
+          wager_amount,
+          matching_status,
+          events (
+            title,
+            category
+          ),
+          bet_matches (
+            yes_participant_id,
+            no_participant_id,
+            wager_amount,
+            status,
+            event_participants (
+              user_id,
+              users (
+                name,
+                avatar_url
+              )
+            )
+          )
+        `)
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setHistory(data || []);
+
+      setHistory(data.map(transformToHistoryItem));
     } catch (error) {
-      console.error('Error fetching event history:', error);
       toast.showError('Failed to load event history');
     } finally {
       setLoading(false);

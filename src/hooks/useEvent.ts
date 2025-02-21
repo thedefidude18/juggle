@@ -85,11 +85,54 @@ export function useEvent() {
   const joinEvent = useCallback(async (eventId: string, prediction: any) => {
     try {
       setLoading(true);
+      const { data: event } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+
       const { error } = await supabase
         .from('event_participants')
         .insert([{ event_id: eventId, prediction }]);
 
       if (error) throw error;
+
+      // Notify creator about new participant
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: event.creator_id,
+          type: 'event_participation',
+          title: 'New Event Participant',
+          content: `${currentUser?.name || 'Someone'} joined your event: ${event.title}`,
+          metadata: {
+            event_id: eventId,
+            participant_id: currentUser?.id,
+            prediction: prediction
+          }
+        });
+
+      // Check for milestones (e.g., 10, 50, 100 participants)
+      const { count } = await supabase
+        .from('event_participants')
+        .select('*', { count: 'exact' })
+        .eq('event_id', eventId);
+
+      const milestones = [10, 50, 100];
+      if (milestones.includes(count)) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: event.creator_id,
+            type: 'event_milestone',
+            title: 'Event Milestone Reached! 🎉',
+            content: `Your event "${event.title}" has reached ${count} participants!`,
+            metadata: {
+              event_id: eventId,
+              participant_count: count
+            }
+          });
+      }
       
       await fetchEvents();
       toast.showSuccess('Successfully joined event');
@@ -99,7 +142,7 @@ export function useEvent() {
     } finally {
       setLoading(false);
     }
-  }, [fetchEvents, toast]);
+  }, [fetchEvents, toast, currentUser]);
 
   const createEvent = async (eventData: CreateEventData) => {
     if (!currentUser) {
