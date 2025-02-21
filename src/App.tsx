@@ -6,7 +6,6 @@ import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Import pages
-import Home from './pages/Home';
 import Events from './pages/Events';
 import Games from './pages/Games';
 import Profile from './pages/Profile';
@@ -36,24 +35,19 @@ const AppRoutes = () => {
       <Route path="/settings/privacy" element={<Privacy />} />
       
       {/* Protected routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Home />
-        </ProtectedRoute>
-      } />
       <Route path="/events" element={
         <ProtectedRoute>
           <Events />
         </ProtectedRoute>
       } />
-      <Route path="/myevents" element={
-        <ProtectedRoute>
-          <MyEvents />
-        </ProtectedRoute>
-      } />
       <Route path="/games" element={
         <ProtectedRoute>
           <Games />
+        </ProtectedRoute>
+      } />
+      <Route path="/myevents" element={
+        <ProtectedRoute>
+          <MyEvents />
         </ProtectedRoute>
       } />
       <Route path="/challenge/:id" element={
@@ -114,9 +108,9 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
-      {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Default redirects */}
+      <Route path="/" element={<Navigate to="/events" replace />} />
+      <Route path="*" element={<Navigate to="/events" replace />} />
     </Routes>
   );
 };
