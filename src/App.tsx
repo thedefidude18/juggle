@@ -115,7 +115,7 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => {
+function App() {
   return (
     <Router>
       <ToastProvider>
@@ -125,6 +125,6 @@ const App = () => {
       </ToastProvider>
     </Router>
   );
-};
+}
 
 export default App;

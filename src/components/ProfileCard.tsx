@@ -61,46 +61,39 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userId, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#242538] rounded-2xl w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <h2 className="text-2xl font-bold text-white">Profile</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-        </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-[#242538] rounded-2xl p-6 w-full max-w-md relative">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
 
-        {/* Profile Info */}
-        <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
+        {/* Profile Content */}
+        <div className="space-y-6">
+          {/* Profile Info */}
+          <div className="flex items-center gap-4">
             <img
               src={profile.avatar_url}
               alt={profile.name}
-              className="w-20 h-20 rounded-full"
+              className="w-20 h-20 rounded-xl"
             />
             <div>
-              <h3 className="text-xl font-bold text-white">{profile.name}</h3>
+              <h2 className="text-white font-bold text-xl">{profile.name}</h2>
               <p className="text-white/60">@{profile.username}</p>
             </div>
           </div>
 
-          {/* Bio */}
-          {profile.bio && (
-            <p className="text-white/80 mb-6">{profile.bio}</p>
-          )}
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-4">
             <div className="bg-[#1a1b2e] rounded-xl p-4">
               <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center mb-2">
                 <Trophy className="w-5 h-5 text-[#CCFF00]" />
               </div>
-              <p className="text-white/60 text-sm">Events Won</p>
-              <p className="text-white font-bold text-xl">28</p>
+              <p className="text-white/60 text-sm">Win Rate</p>
+              <p className="text-white font-bold text-xl">{profile.win_rate}%</p>
             </div>
             <div className="bg-[#1a1b2e] rounded-xl p-4">
               <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center mb-2">
@@ -142,7 +135,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userId, onClose }) => {
                   onClick={() => setShowChallenge(true)}
                   className="py-3 bg-[#7C3AED] text-white rounded-xl font-medium hover:bg-[#6D35D3] transition-colors"
                 >
-                  Challenge me
+                  Challenge
                 </button>
               </>
             )}
@@ -150,11 +143,19 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userId, onClose }) => {
         </div>
       </div>
 
+      {/* Challenge Modal */}
       {showChallenge && currentUser && (
         <ChallengeModal
           challengerId={currentUser.id}
           challengedId={profile.id}
+          challengedName={profile.name}
+          challengedUsername={profile.username}
+          challengedAvatar={profile.avatar_url}
           onClose={() => setShowChallenge(false)}
+          onSuccess={() => {
+            setShowChallenge(false);
+            onClose();
+          }}
         />
       )}
     </div>

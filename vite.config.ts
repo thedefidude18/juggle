@@ -1,34 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    proxy: {
-      '/api': {
-        target: 'https://auth.privy.io',
-        changeOrigin: true,
-        secure: false,
-      }
-    }
+    port: 5175,
+    host: true, // This allows access from network
+    strictPort: true, // This ensures it uses the specified port
+    watch: {
+      usePolling: true,
+    },
   },
   resolve: {
     alias: {
-      buffer: 'buffer',
-      process: 'process/browser',
-      stream: 'stream-browserify',
-      crypto: 'crypto-browserify'
+      '@': path.resolve(__dirname, './src'),
     }
   },
-  define: {
-    'process.env': {},
-    global: 'globalThis'
+  build: {
+    sourcemap: true,
+    outDir: 'dist',
   },
   optimizeDeps: {
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      }
-    }
-  }
+    include: ['react', 'react-dom'],
+  },
 });

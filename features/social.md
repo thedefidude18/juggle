@@ -1,0 +1,7 @@
+- Add friend/connection system
+- Create user groups/communities
+- Implement feed/timeline
+- Add post/content sharing
+- Create social challenges
+- Add reactions/emoji responses
+- Implement user mentions/tags

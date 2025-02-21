@@ -5,16 +5,18 @@ import { useToast } from '../contexts/ToastContext';
 
 export interface Chat {
   id: string;
-  event_id?: string;
-  chat_id?: string;
-  last_message?: string;
-  last_message_at?: string;
+  created_at: string;
   participants: {
     id: string;
     name: string;
     username: string;
     avatar_url?: string;
   }[];
+  last_message?: {
+    content: string;
+    created_at: string;
+    sender_id: string;
+  };
 }
 
 export function useChat() {
@@ -29,65 +31,38 @@ export function useChat() {
     try {
       setLoading(true);
       
-      // Fetch event chats
-      const { data: eventChats, error: eventError } = await supabase
-        .from('event_participants')
+      const { data: userChats, error: chatsError } = await supabase
+        .from('chat_participants')
         .select(`
-          event:events (
-            id,
-            title,
-            created_at,
-            creator:users!creator_id (
-              id,
-              name,
-              username,
-              avatar_url
-            )
-          )
-        `)
-        .eq('user_id', currentUser.id)
-        .eq('status', 'accepted');
-
-      if (eventError) throw eventError;
-
-      // Fetch private chats
-      const { data: privateChats, error: privateError } = await supabase
-        .from('private_chat_participants')
-        .select(`
-          chat:private_chats (
+          chat:private_chats!chat_id (
             id,
             created_at,
-            participants:private_chat_participants (
-              user:users (
+            participants:chat_participants!chat_id (
+              user:users!user_id (
                 id,
                 name,
                 username,
                 avatar_url
               )
+            ),
+            messages:chat_messages (
+              content,
+              created_at,
+              sender_id
             )
           )
         `)
-        .eq('user_id', currentUser.id);
+        .eq('user_id', currentUser.id)
+        .order('created_at', { foreignTable: 'private_chats', ascending: false });
 
-      if (privateError) throw privateError;
+      if (chatsError) throw chatsError;
 
-      // Combine and format chats
-      const formattedChats: Chat[] = [
-        ...eventChats.map(({ event }) => ({
-          id: event.id,
-          event_id: event.id,
-          participants: [event.creator],
-          created_at: event.created_at,
-        })),
-        ...privateChats.map(({ chat }) => ({
-          id: chat.id,
-          chat_id: chat.id,
-          participants: chat.participants
-            .map(p => p.user)
-            .filter(user => user.id !== currentUser.id),
-          created_at: chat.created_at,
-        }))
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const formattedChats = userChats.map(({ chat }) => ({
+        id: chat.id,
+        created_at: chat.created_at,
+        participants: chat.participants.map(p => p.user),
+        last_message: chat.messages[0]
+      }));
 
       setChats(formattedChats);
     } catch (error) {
@@ -98,26 +73,32 @@ export function useChat() {
     }
   }, [currentUser, toast]);
 
-  const createPrivateChat = async (friendId: string) => {
+  const createPrivateChat = async (userId: string) => {
     if (!currentUser) throw new Error('Not authenticated');
 
-    const { data: existing, error: checkError } = await supabase
-      .from('private_chat_participants')
+    // Check if chat already exists
+    const { data: existingChat, error: checkError } = await supabase
+      .from('chat_participants')
       .select('chat_id')
       .eq('user_id', currentUser.id)
-      .eq('chat_id', supabase.from('private_chat_participants').select('chat_id').eq('user_id', friendId));
+      .in('chat_id', 
+        supabase
+          .from('chat_participants')
+          .select('chat_id')
+          .eq('user_id', userId)
+      );
 
     if (checkError) throw checkError;
 
     // If chat exists, return it
-    if (existing.length > 0) {
+    if (existingChat && existingChat.length > 0) {
       const { data: chat, error: chatError } = await supabase
         .from('private_chats')
         .select(`
           id,
           created_at,
-          participants:private_chat_participants (
-            user:users (
+          participants:chat_participants!chat_id (
+            user:users!user_id (
               id,
               name,
               username,
@@ -125,7 +106,7 @@ export function useChat() {
             )
           )
         `)
-        .eq('id', existing[0].chat_id)
+        .eq('id', existingChat[0].chat_id)
         .single();
 
       if (chatError) throw chatError;
@@ -143,15 +124,34 @@ export function useChat() {
 
     // Add participants
     const { error: participantsError } = await supabase
-      .from('private_chat_participants')
+      .from('chat_participants')
       .insert([
         { chat_id: chat.id, user_id: currentUser.id },
-        { chat_id: chat.id, user_id: friendId }
+        { chat_id: chat.id, user_id: userId }
       ]);
 
     if (participantsError) throw participantsError;
 
-    return chat;
+    // Fetch the complete chat with participants
+    const { data: newChat, error: fetchError } = await supabase
+      .from('private_chats')
+      .select(`
+        id,
+        created_at,
+        participants:chat_participants!chat_id (
+          user:users!user_id (
+            id,
+            name,
+            username,
+            avatar_url
+          )
+        )
+      `)
+      .eq('id', chat.id)
+      .single();
+
+    if (fetchError) throw fetchError;
+    return newChat;
   };
 
   useEffect(() => {
