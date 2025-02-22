@@ -29,7 +29,6 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searching, setSearching] = useState(false);
 
-  // Search users function
   const searchUsers = useCallback(async (query: string) => {
     if (!query.trim() || !currentUser?.id) return [];
 
@@ -37,7 +36,7 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
       const { data, error } = await supabase
         .from('users')
         .select('id, name, username, avatar_url, status')
-        .neq('id', currentUser.id) // Exclude current user
+        .neq('id', currentUser.id)
         .or(`username.ilike.%${query}%,name.ilike.%${query}%`)
         .order('username')
         .limit(20);
@@ -51,43 +50,17 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
     }
   }, [currentUser?.id, toast]);
 
-  // Debounced search function
-  const debouncedSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim()) {
-        setSearchResults([]);
-        return;
-      }
-
-      setSearching(true);
-      try {
-        const results = await searchUsers(query);
-        setSearchResults(results);
-      } catch (error) {
-        console.error('Search failed:', error);
-        toast.showError('Failed to search users');
-      } finally {
-        setSearching(false);
-      }
-    },
-    [searchUsers, toast]
-  );
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      debouncedSearch(search);
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [search, debouncedSearch]);
-
   const handleSelectUser = async (userId: string) => {
+    if (creating) return;
+    
     try {
       setCreating(true);
       const chat = await createPrivateChat(userId);
-      onChatCreated(chat);
-      onClose();
-      toast.showSuccess('Chat created successfully');
+      if (chat) {
+        onChatCreated(chat);
+        onClose();
+        toast.showSuccess('Chat created successfully');
+      }
     } catch (error) {
       console.error('Failed to create chat:', error);
       toast.showError('Failed to create chat');
@@ -96,14 +69,29 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
     }
   };
 
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (search.trim()) {
+        setSearching(true);
+        searchUsers(search)
+          .then(setSearchResults)
+          .finally(() => setSearching(false));
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [search, searchUsers]);
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-light-card dark:bg-dark-card rounded-lg w-full max-w-md">
-        <div className="p-4 border-b border-light-border dark:border-dark-border flex justify-between items-center">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
           <h2 className="text-lg font-semibold">New Message</h2>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-light-hover dark:hover:bg-dark-hover rounded-full"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -112,52 +100,43 @@ const NewChatModal: React.FC<NewChatModalProps> = ({ onClose, onChatCreated }) =
 
         <div className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-light-text/60 dark:text-dark-text/60" />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-light-hover dark:bg-dark-hover rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-              disabled={creating}
-            />
+            <div className="flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+              <Search className="w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 ml-2 bg-transparent outline-none"
+              />
+              {searching && <LoadingSpinner size="sm" />}
+            </div>
           </div>
-        </div>
 
-        <div className="max-h-[400px] overflow-y-auto">
-          {searching ? (
-            <div className="p-4 flex justify-center">
-              <LoadingSpinner />
-            </div>
-          ) : searchResults.length === 0 ? (
-            <div className="p-4 text-center text-light-text/60 dark:text-dark-text/60">
-              {search.trim() ? 'No users found' : 'Start typing to search users'}
-            </div>
-          ) : (
-            searchResults.map(user => (
+          <div className="mt-4 space-y-2 max-h-[60vh] overflow-y-auto">
+            {searchResults.map((user) => (
               <button
                 key={user.id}
                 onClick={() => handleSelectUser(user.id)}
                 disabled={creating}
-                className="w-full p-4 flex items-center gap-3 hover:bg-light-hover dark:hover:bg-dark-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full p-3 flex items-center space-x-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <UserAvatar
-                  src={user.avatar_url}
-                  alt={user.name || 'User'}
-                  size="md"
+                  url={user.avatar_url}
+                  name={user.name || user.username || ''}
+                  status={user.status}
                 />
                 <div className="flex-1 text-left">
-                  <div className="font-semibold">{user.name || 'Anonymous'}</div>
-                  <div className="text-sm text-light-text/60 dark:text-dark-text/60">
-                    @{user.username}
-                  </div>
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-gray-500">@{user.username}</p>
                 </div>
-                {creating && user.id === searchResults[0]?.id && (
-                  <LoadingSpinner size="sm" />
-                )}
               </button>
-            ))
-          )}
+            ))}
+            
+            {search && !searching && searchResults.length === 0 && (
+              <p className="text-center text-gray-500 py-4">No users found</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -52,6 +52,7 @@ export function useNotification() {
 
   const fetchNotifications = useCallback(async () => {
     if (!userId) {
+      console.log('No userId available, skipping notification fetch');
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
@@ -59,6 +60,7 @@ export function useNotification() {
     }
 
     try {
+      console.log('Fetching notifications for user:', userId);
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -67,8 +69,20 @@ export function useNotification() {
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read_at).length || 0);
+      console.log('Fetched notifications:', data);
+      
+      // Filter out any notifications with null required fields
+      const validNotifications = data?.filter(n => 
+        n.type && n.title && n.content
+      ) || [];
+
+      setNotifications(validNotifications);
+      setUnreadCount(validNotifications.filter(n => !n.read_at).length);
+      
+      // Debug log
+      console.log('Valid notifications:', validNotifications.length);
+      console.log('Unread count:', validNotifications.filter(n => !n.read_at).length);
+      
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.showError('Failed to load notifications');
@@ -126,9 +140,11 @@ export function useNotification() {
   }, [userId, toast]);
 
   useEffect(() => {
+    console.log('useEffect triggered, currentUser:', !!currentUser);
     fetchNotifications();
 
     if (userId) {
+      console.log('Setting up realtime subscription for notifications');
       const subscription = supabase
         .channel('notifications')
         .on('postgres_changes', {
@@ -137,6 +153,7 @@ export function useNotification() {
           table: 'notifications',
           filter: `user_id=eq.${userId}`
         }, payload => {
+          console.log('Received new notification:', payload.new);
           setNotifications(prev => [payload.new as Notification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
@@ -145,6 +162,7 @@ export function useNotification() {
         .subscribe();
 
       return () => {
+        console.log('Cleaning up notification subscription');
         subscription.unsubscribe();
       };
     }

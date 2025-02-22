@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart2, Trophy, Users, Wallet } from 'lucide-react';
+import { Trophy, Crown, Star, Sparkles, ArrowLeft } from 'lucide-react';
 import MobileFooterNav from '../components/MobileFooterNav';
 import ProfileCard from '../components/ProfileCard';
 import { useLeaderboard } from '../hooks/useLeaderboard';
@@ -7,142 +7,142 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 const Leaderboard: React.FC = () => {
   const { users, loading } = useLeaderboard();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const topUsers = users.slice(0, 3);
-  const otherUsers = users.slice(3);
-
-  const handleUserClick = (userId: string) => {
-    setSelectedUserId(userId);
-  };
+  const [timeFilter, setTimeFilter] = useState<'all' | 'weekly' | 'monthly'>('all');
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#EDEDED] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#CCFF00]"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-purple-500"></div>
       </div>
     );
   }
 
+  const getRankStyle = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return "bg-gradient-to-r from-yellow-200 to-yellow-100 text-yellow-700";
+      case 2:
+        return "bg-gradient-to-r from-blue-200 to-blue-100 text-blue-700";
+      case 3:
+        return "bg-gradient-to-r from-orange-200 to-orange-100 text-orange-700";
+      default:
+        return "bg-purple-100 text-purple-700";
+    }
+  };
+
+  const getAchievementCount = (eventsWon: number) => {
+    if (eventsWon >= 20) return 3;
+    if (eventsWon >= 10) return 2;
+    if (eventsWon >= 5) return 1;
+    return 0;
+  };
+
   return (
-    <div className="min-h-screen bg-[#1a1b2e] pb-[72px]">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       {/* Header */}
-      <header className="bg-[#EDEDED] text-[#000000] p-4 sticky top-0 z-10 safe-top flex justify-center items-center relative">  <button
-    onClick={() => window.history.back()}
-    className="absolute left-4 p-2 rounded-full bg-white bg-opacity-20 hover:bg-opacity-30"
-  >
-    {/* Use an appropriate back arrow icon here */}
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M15 19l-7-7 7-7"
-      />
-    </svg>
-  </button>
-  <div className="flex items-center gap-2">
-    <Trophy className="w-6 h-6" />
-    <h1 className="text-xl font-bold">Leaderboard</h1>
-  </div>
-</header>
-
-
-      {/* Top Winners */}
-      <div className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          {topUsers.map((user) => (
-            <div
-              key={user.id}
-              className="bg-[#242538] p-6 rounded-xl relative overflow-hidden cursor-pointer"
-              onClick={() => handleUserClick(user.id)}
-            >
-              <div className="absolute top-3 right-3">
-                {user.rank === 1 && <Trophy className="w-6 h-6 text-[#FFD700]" />}
-                {user.rank === 2 && <Trophy className="w-6 h-6 text-[#C0C0C0]" />}
-                {user.rank === 3 && <Trophy className="w-6 h-6 text-[#CD7F32]" />}
-              </div>
-              <div className="flex items-center gap-3 mb-4">
-                <img
-                  src={user.avatar_url}
-                  alt={user.name}
-                  className="w-12 h-12 rounded-full"
-                />
-                <div>
-                  <h3 className="text-white font-medium">{user.name}</h3>
-                  <p className="text-white/60 text-sm">{user.username}</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60">Groups Joined</span>
-                  <span className="text-[#CCFF00] font-bold">
-                    {user.groups_joined}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60">Events Won</span>
-                  <span className="text-white font-medium">{user.events_won}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/60">Total Winnings</span>
-                  <span className="text-[#CCFF00] font-bold">
-                    ₦ {user.total_winnings.toLocaleString()}
-                  </span>
-                </div>
+      <div className="relative px-6 py-6 border-b border-gray-100 bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.history.back()}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <ArrowLeft className="w-6 h-6 text-gray-600" />
+              </button>
+              <div className="flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-purple-500" />
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  Leaderboard
+                </h1>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Full Leaderboard */}
-        <div className="bg-[#242538] rounded-xl">
-          <div className="p-4 border-b border-white/10">
-            <h2 className="text-white font-semibold">All Players</h2>
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-500" />
+              <span className="text-purple-600 text-sm font-medium">
+                {timeFilter === 'weekly' ? '7 days' : timeFilter === 'monthly' ? '30 days' : 'All time'}
+              </span>
+            </div>
           </div>
-          <div className="divide-y divide-white/10">
-            {otherUsers.map((user) => (
-              <div 
-                key={user.id} 
-                className="p-4 flex items-center gap-4 cursor-pointer hover:bg-white/5"
-                onClick={() => handleUserClick(user.id)}
+
+          {/* Time Filter */}
+          <div className="flex gap-2">
+            {(['all', 'weekly', 'monthly'] as const).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setTimeFilter(filter)}
+                className={`px-6 py-2 rounded-full transition-all duration-200 
+                  ${timeFilter === filter 
+                    ? 'bg-purple-500 text-white shadow-md shadow-purple-200 hover:shadow-lg hover:bg-purple-600' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                  }`}
               >
-                <span className="text-white/60 font-medium w-6 text-center">
-                  {user.rank}
-                </span>
-                <img
-                  src={user.avatar_url}
-                  alt={user.name}
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1">
-                  <h3 className="text-white font-medium">{user.name}</h3>
-                  <p className="text-white/60 text-sm">{user.username}</p>
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Leaderboard List */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+          <div className="divide-y divide-gray-100">
+            {users.map((user) => (
+              <div
+                key={user.id}
+                onClick={() => setSelectedUserId(user.id)}
+                className={`px-6 py-4 flex items-center hover:bg-gray-50 transition-all duration-200 cursor-pointer
+                  ${user.rank <= 3 ? 'hover:shadow-md' : ''}`}
+              >
+                {/* Avatar with Rank Badge */}
+                <div className="relative">
+                  <img
+                    src={user.avatar_url}
+                    alt={user.name}
+                    className={`w-12 h-12 rounded-full border-2 
+                      ${user.rank === 1 ? 'border-yellow-400' : 
+                        user.rank === 2 ? 'border-blue-400' : 
+                        user.rank === 3 ? 'border-orange-400' : 'border-gray-200'}`}
+                  />
+                  {/* Rank Badge */}
+                  <div className={`absolute -bottom-2 -left-2 w-6 h-6 flex items-center justify-center rounded-full font-bold text-sm shadow-md ${getRankStyle(user.rank)}`}>
+                    {user.rank}
+                  </div>
+                  {/* Crown for #1 */}
+                  {user.rank === 1 && (
+                    <div className="absolute -top-2 -right-2">
+                      <Crown className="w-5 h-5 text-yellow-500 animate-bounce" />
+                    </div>
+                  )}
                 </div>
+
+                {/* Name and Achievements */}
+                <div className="ml-4 flex-1">
+                  <h3 className="font-semibold text-gray-900">{user.name}</h3>
+                  <p className="text-gray-500 text-sm">@{user.username}</p>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[...Array(getAchievementCount(user.events_won))].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 text-purple-400 fill-purple-400" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stats */}
                 <div className="flex items-center gap-6">
                   <div className="text-center">
-                    <div className="flex items-center gap-1 text-[#CCFF00]">
-                      <Users className="w-4 h-4" />
-                      <span className="font-bold">{user.groups_joined}</span>
-                    </div>
-                    <p className="text-white/60 text-xs">Groups</p>
+                    <p className="text-sm text-gray-500">Groups</p>
+                    <p className="font-bold text-gray-900">{user.groups_joined}</p>
                   </div>
                   <div className="text-center">
-                    <div className="flex items-center gap-1 text-[#CCFF00]">
-                      <Trophy className="w-4 h-4" />
-                      <span className="font-bold">{user.events_won}</span>
-                    </div>
-                    <p className="text-white/60 text-xs">Wins</p>
+                    <p className="text-sm text-gray-500">Wins</p>
+                    <p className="font-bold text-gray-900">{user.events_won}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[#CCFF00] font-bold">
-                      ₦ {user.total_winnings.toLocaleString()}
+                  <div className="text-right min-w-[100px]">
+                    <p className="text-sm text-gray-500">Earnings</p>
+                    <p className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      ₦{user.total_winnings.toLocaleString()}
                     </p>
-                    <p className="text-white/60 text-xs">Winnings</p>
                   </div>
                 </div>
               </div>
@@ -152,9 +152,9 @@ const Leaderboard: React.FC = () => {
       </div>
 
       {selectedUserId && (
-        <ProfileCard 
-          userId={selectedUserId} 
-          onClose={() => setSelectedUserId(null)} 
+        <ProfileCard
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
         />
       )}
 
