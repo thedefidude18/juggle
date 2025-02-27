@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, Paperclip, Send } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import UserAvatar from './UserAvatar';
-import { Chat } from '../types/chat';
+import { useChatMessages } from '../hooks/useChat';
 
 interface ChatWindowProps {
-  chat: Chat;
+  chat: {
+    id: string;
+    participants: any[];
+  };
   onBack?: () => void;
 }
 
@@ -16,13 +19,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, onBack }) => {
   const toast = useToast();
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const { messages, sendMessage } = useChatMessages();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSend = async () => {
     if (!message.trim() || sending) return;
 
     try {
       setSending(true);
-      // Implement your send message logic here
+      await sendMessage(chat.id, message.trim());
       setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -33,23 +42,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, onBack }) => {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    toast.showInfo('File upload coming soon!');
+    // Implement file upload logic here
   };
 
-  // Get other participant's info
-  const otherParticipant = chat.participants.find(p => p.user_id !== currentUser?.id);
+  const otherParticipant = chat.participants?.find(p => p.id !== currentUser?.id);
 
   return (
-    <div className="flex flex-col h-full bg-light-bg dark:bg-dark-bg">
-      {/* Header */}
-      <header className="bg-light-card dark:bg-dark-card p-4 flex items-center gap-3 border-b border-light-border dark:border-dark-border">
+    <div className="flex flex-col h-full">
+      <header className="p-4 bg-light-card dark:bg-dark-card border-b border-light-border dark:border-dark-border flex items-center gap-3">
         {onBack && (
-          <button
-            onClick={onBack}
-            className="lg:hidden p-2 hover:bg-light-hover dark:hover:bg-dark-hover rounded-full"
-          >
+          <button onClick={onBack} className="lg:hidden">
             <ArrowLeft className="w-6 h-6" />
           </button>
         )}
@@ -66,14 +68,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, onBack }) => {
         </div>
       </header>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {chat.messages?.map((msg) => (
+        {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${msg.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
           >
-            {msg.sender_id !== currentUser?.id && (
+            {msg.senderId !== currentUser?.id && (
               <UserAvatar
                 src={msg.sender?.avatar_url}
                 alt={msg.sender?.name || 'User'}
@@ -83,7 +84,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, onBack }) => {
             )}
             <div
               className={`max-w-[70%] rounded-xl p-3 ${
-                msg.sender_id === currentUser?.id
+                msg.senderId === currentUser?.id
                   ? 'bg-primary text-white'
                   : 'bg-light-card dark:bg-dark-card'
               }`}
@@ -92,9 +93,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, onBack }) => {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <div className="p-4 bg-light-card dark:bg-dark-card border-t border-light-border dark:border-dark-border">
         <div className="flex items-center gap-2">
           <label className="p-2 hover:bg-light-hover dark:hover:bg-dark-hover rounded-full cursor-pointer">

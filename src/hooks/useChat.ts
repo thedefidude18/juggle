@@ -1,199 +1,161 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useToast } from '../contexts/ToastContext';
 
 export interface Chat {
   id: string;
+  title: string;
   created_at: string;
-  participants: {
-    id: string;
-    name: string;
-    username: string;
-    avatar_url?: string;
-  }[];
-  last_message?: {
-    content: string;
-    created_at: string;
-    sender_id: string;
-  };
+  updated_at: string;
+  last_message?: string;
+  type: 'private' | 'group';
+  created_by: string;
 }
 
-export function useChat() {
-  const { currentUser } = useAuth();
-  const toast = useToast();
+export interface Message {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  is_image: boolean;
+  replied_to?: string;
+}
+
+// Export both hook names for backward compatibility
+export const useChat = useChatMessages;
+export function useChatMessages() {
   const [chats, setChats] = useState<Chat[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { currentUser } = useAuth();
 
   const fetchChats = useCallback(async () => {
     if (!currentUser) return;
-
+    
     try {
       setLoading(true);
-
-      // Fetch chats for the current user
-      const { data: userChats, error: chatsError } = await supabase
-        .from('chat_participants')
-        .select(`
-          chat:private_chats!chat_id (
-            id,
-            created_at,
-            participants:chat_participants!chat_id (
-              user:users!user_id (
-                id,
-                name,
-                username,
-                avatar_url
-              )
-            ),
-            last_message:messages (
-              content,
-              created_at,
-              sender_id
-            )
-          )
-        `)
-        .eq('user_id', currentUser.id)
-        .order('created_at', { foreignTable: 'private_chats', ascending: false });
-
-      if (chatsError) {
-        console.error('Error in chat query:', chatsError);
-        throw chatsError;
-      }
-
-      if (!userChats) {
-        setChats([]);
-        return;
-      }
-
-      // Format the fetched chats
-      const formattedChats = userChats
-        .filter(chat => chat.chat) // Filter out any null chat entries
-        .map(({ chat }) => ({
-          id: chat.id,
-          created_at: chat.created_at,
-          participants: chat.participants
-            .filter(p => p.user) // Filter out any null user entries
-            .map(p => p.user),
-          last_message: chat.last_message && chat.last_message.length > 0 
-            ? chat.last_message[0] 
-            : undefined
-        }));
-
-      setChats(formattedChats);
-    } catch (error) {
-      console.error('Error fetching chats:', error);
-      toast.showError('Failed to load chats');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser, toast]);
-
-  const createPrivateChat = async (userId: string) => {
-    if (!currentUser) throw new Error('Not authenticated');
-    if (userId === currentUser.id) throw new Error('Cannot create chat with yourself');
-
-    try {
-      // Check for existing chat
-      const { data: existingChats, error: existingError } = await supabase
+      setError(null);
+      
+      // Get all chats where the current user is a participant
+      const { data: chatParticipants, error: participantsError } = await supabase
         .from('chat_participants')
         .select('chat_id')
         .eq('user_id', currentUser.id);
 
-      if (existingError) throw existingError;
+      if (participantsError) throw participantsError;
 
-      if (existingChats && existingChats.length > 0) {
-        const existingChatIds = existingChats.map(chat => chat.chat_id);
+      const chatIds = chatParticipants.map(cp => cp.chat_id);
 
-        const { data: sharedChat, error: sharedError } = await supabase
-          .from('chat_participants')
-          .select('chat_id')
-          .eq('user_id', userId)
-          .in('chat_id', existingChatIds)
-          .single();
+      const { data: chatsData, error: chatsError } = await supabase
+        .from('chats')
+        .select('*')
+        .in('id', chatIds)
+        .order('updated_at', { ascending: false });
 
-        if (sharedError && sharedError.code !== 'PGRST116') { // Ignore "no rows returned" error
-          throw sharedError;
-        }
+      if (chatsError) throw chatsError;
 
-        if (sharedChat) {
-          // Return existing chat
-          const { data: chat, error: chatError } = await supabase
-            .from('private_chats')
-            .select(`
-              id,
-              created_at,
-              participants:chat_participants (
-                user:users (
-                  id,
-                  name,
-                  username,
-                  avatar_url
-                )
-              )
-            `)
-            .eq('id', sharedChat.chat_id)
-            .single();
+      setChats(chatsData || []);
+    } catch (err: any) {
+      console.error('Error fetching chats:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
-          if (chatError) throw chatError;
-          return chat;
-        }
-      }
+  const fetchMessages = useCallback(async (chatId: string) => {
+    if (!currentUser) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('chat_id', chatId)
+        .order('created_at', { ascending: true });
 
-      // Create new chat
-      const { data: newChat, error: createError } = await supabase
-        .from('private_chats')
-        .insert({})
+      if (error) throw error;
+
+      setMessages(data || []);
+    } catch (err: any) {
+      console.error('Error fetching messages:', err);
+      setError(err.message);
+    }
+  }, [currentUser]);
+
+  const sendMessage = useCallback(async (chatId: string, content: string, isImage = false) => {
+    if (!currentUser) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          chat_id: chatId,
+          sender_id: currentUser.id,
+          content,
+          is_image: isImage
+        })
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (error) throw error;
 
-      // Add participants
-      const { error: participantsError } = await supabase
-        .from('chat_participants')
-        .insert([
-          { chat_id: newChat.id, user_id: currentUser.id },
-          { chat_id: newChat.id, user_id: userId }
-        ]);
+      // Update the messages list
+      setMessages(prev => [...prev, data]);
 
-      if (participantsError) throw participantsError;
+      // Update the chat's last message
+      await supabase
+        .from('chats')
+        .update({ 
+          last_message: isImage ? '📷 Image' : content,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', chatId);
 
-      // Fetch complete chat details
-      const { data: chat, error: fetchError } = await supabase
-        .from('private_chats')
-        .select(`
-          id,
-          created_at,
-          participants:chat_participants (
-            user:users (
-              id,
-              name,
-              username,
-              avatar_url
-            )
-          )
-        `)
-        .eq('id', newChat.id)
-        .single();
-
-      if (fetchError) throw fetchError;
-      return chat;
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      toast.showError('Failed to create chat');
-      throw error;
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      setError(err.message);
     }
-  };
+  }, [currentUser]);
 
+  // Set up real-time subscription
   useEffect(() => {
-    fetchChats();
-  }, [fetchChats]);
+    if (!currentUser) return;
+
+    const subscription = supabase
+      .channel('chat_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          // Refresh messages if it's for the current chat
+          if (payload.new.chat_id === messages[0]?.chat_id) {
+            fetchMessages(payload.new.chat_id);
+          }
+          // Refresh chat list to update last messages
+          fetchChats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [currentUser, fetchChats, fetchMessages, messages]);
 
   return {
     chats,
+    messages,
     loading,
+    error,
     fetchChats,
-    createPrivateChat,
+    fetchMessages,
+    sendMessage
   };
 }

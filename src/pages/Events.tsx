@@ -144,7 +144,7 @@ const Events = () => {
         <div className={`fixed inset-0 z-50 lg:relative lg:z-0 ${showChat ? 'block' : 'hidden lg:hidden'}`}>
           {showChat && selectedEvent && (
             <EventChat
-              event={selectedEvent}
+              eventId={selectedEvent.id}
               onClose={() => setShowChat(false)}
             />
           )}
